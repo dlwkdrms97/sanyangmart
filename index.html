@@ -20,9 +20,10 @@
         body {
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
             background-color: var(--bg-color);
-            margin: 0; padding: 20px;
+            margin: 0; padding: 10px;
             display: flex; flex-direction: column; align-items: center;
             user-select: none;
+            overflow-x: hidden;
         }
 
         header {
@@ -30,14 +31,21 @@
             display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 20px; background: white; padding: 15px 25px;
             border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            flex-wrap: wrap; gap: 15px;
         }
 
-        .header-left, .header-right { display: flex; align-items: center; gap: 10px; }
-        .header-center { text-align: center; }
+        .header-left, .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        .header-center { text-align: center; flex: 1 1 100%; order: -1; }
+
+        @media (min-width: 768px) {
+            body { padding: 20px; }
+            .header-center { flex: 0 1 auto; order: 0; }
+        }
 
         .level-btn, .help-btn, .admin-btn, .music-btn {
             padding: 10px 15px; font-size: 0.9rem; font-weight: bold;
             border: none; border-radius: 10px; cursor: pointer; transition: all 0.2s;
+            white-space: nowrap;
         }
 
         .level-btn.active { background-color: var(--primary-color); color: white; }
@@ -50,17 +58,21 @@
         input[type=range] { width: 80px; cursor: pointer; }
 
         main {
-            display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 20px;
-            width: 100%; max-width: 1200px; height: 700px;
+            display: grid; grid-template-columns: 1fr; gap: 20px;
+            width: 100%; max-width: 1200px;
         }
 
-        .panel { background: white; border-radius: 25px; padding: 20px; box-shadow: 0 8px 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        @media (min-width: 992px) {
+            main { grid-template-columns: 1fr 1.2fr 1fr; height: 750px; }
+        }
+
+        .panel { background: white; border-radius: 25px; padding: 20px; box-shadow: 0 8px 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; min-height: 400px; }
         .panel-header { display: flex; justify-content: center; align-items: center; position: relative; margin-bottom: 15px; }
         .clear-cart-btn { position: absolute; right: 0; padding: 5px 10px; font-size: 0.8rem; background: #eee; border: none; border-radius: 8px; cursor: pointer; }
 
         h2 { text-align: center; color: #444; margin: 0; font-size: 1.5rem; }
 
-        .store-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; overflow-y: auto; }
+        .store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; overflow-y: auto; }
         .item-card { background: #f8f9fa; border: 3px solid transparent; border-radius: 15px; padding: 15px; text-align: center; cursor: pointer; transition: all 0.2s; }
         .item-card:hover { border-color: var(--primary-color); background: #e7f5ff; }
         .item-img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; border-radius: 10px; }
@@ -68,25 +80,26 @@
         .item-price { font-weight: bold; color: var(--accent-color); font-size: 1.2rem; }
 
         .checkout-panel { background-color: var(--checkout-bg); }
-        .cart-list { flex-grow: 1; background: white; border-radius: 15px; padding: 10px; margin-bottom: 15px; overflow-y: auto; border: 2px dashed #adc6ff; }
+        .cart-list { flex-grow: 1; background: white; border-radius: 15px; padding: 10px; margin-bottom: 15px; overflow-y: auto; border: 2px dashed #adc6ff; min-height: 150px; }
         .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
-        .remove-btn { background: #ff4d4f; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; }
+        .remove-btn { background: #ff4d4f; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-weight: bold; }
 
         .total-display { font-size: 1.8rem; font-weight: 800; text-align: right; margin-bottom: 15px; color: #1e3a8a; }
-        .drop-zone { height: 200px; background: rgba(255,255,255,0.8); border: 4px dashed var(--primary-color); border-radius: 20px; position: relative; overflow: hidden; }
+        .drop-zone { height: 200px; background: rgba(255,255,255,0.8); border: 4px dashed var(--primary-color); border-radius: 20px; position: relative; overflow: hidden; touch-action: none; }
         .drop-zone.dragover { background: #d0ebff; }
-        .drop-zone::after { content: '여기에 돈을 놓으세요'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--primary-color); font-weight: bold; opacity: 0.5; pointer-events: none; }
+        .drop-zone::after { content: '여기에 돈을 놓으세요'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--primary-color); font-weight: bold; opacity: 0.5; pointer-events: none; text-align: center; width: 100%; }
 
         .paid-display { background: #fff; padding: 10px; border-radius: 10px; margin-top: 10px; font-size: 1.3rem; text-align: center; border: 2px solid var(--primary-color); }
 
         .wallet-panel { background-color: var(--wallet-bg); }
-        .money-source { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; align-items: center; padding-top: 10px; }
+        .money-source { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; align-items: center; padding-top: 10px; }
 
         .money-item {
             width: 100%; height: 75px; background-color: transparent;
             display: flex; justify-content: center; align-items: center; cursor: grab; 
             background-size: contain; background-repeat: no-repeat; background-position: center;
             color: transparent; border: none; box-shadow: none;
+            touch-action: none;
         }
         
         .money-1000  { background-image: url('1000.png'); }
@@ -96,23 +109,33 @@
         .money-500   { background-image: url('500.png'); height: 70px; }
         .money-100   { background-image: url('100.png'); height: 60px; }
 
-        .pay-btn { padding: 20px 60px; font-size: 1.5rem; background-color: #ccc; color: white; border: none; border-radius: 50px; cursor: not-allowed; transition: all 0.3s; }
+        .pay-btn { padding: 15px 40px; font-size: 1.3rem; background-color: #ccc; color: white; border: none; border-radius: 50px; cursor: not-allowed; transition: all 0.3s; margin-bottom: 40px; }
+        @media (min-width: 768px) {
+            .pay-btn { padding: 20px 60px; font-size: 1.5rem; }
+        }
         .pay-btn.enabled { background-color: var(--success-color); cursor: pointer; box-shadow: 0 6px 15px rgba(76, 175, 80, 0.4); }
 
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; padding: 30px; border-radius: 20px; width: 500px; max-height: 85vh; overflow-y: auto; }
-        .help-modal-content { background: white; padding: 30px; border-radius: 20px; width: 700px; max-height: 85vh; overflow-y: auto; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; padding: 20px; box-sizing: border-box; }
+        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 100%; max-width: 500px; max-height: 85vh; overflow-y: auto; }
+        .help-modal-content { background: white; padding: 25px; border-radius: 20px; width: 100%; max-width: 700px; max-height: 85vh; overflow-y: auto; }
         
         .help-section { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
-        .help-step { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; white-space: nowrap; }
+        .help-step { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; }
         .step-num { background: var(--primary-color); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center; font-size: 0.8rem; flex-shrink: 0; }
 
         .admin-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding: 15px; background: #f8f0ff; border-radius: 15px; }
-        .admin-form input, .admin-form select { padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
-        .admin-item-row { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #f0f0f0; }
-        .delete-btn { background: #ff4d4f; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        .admin-form input, .admin-form select { padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
+        .admin-item-row { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #f0f0f0; gap: 10px; }
+        .delete-btn { background: #ff4d4f; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; }
 
-        footer { position: fixed; bottom: 10px; left: 20px; font-size: 0.8rem; color: #aaa; text-align: left; pointer-events: none; }
+        footer { position: fixed; bottom: 10px; left: 20px; font-size: 0.7rem; color: #aaa; text-align: left; pointer-events: none; z-index: -1; }
+
+        /* 터치 드래그용 가상 아이템 */
+        .touch-clone {
+            position: fixed; pointer-events: none; z-index: 2000;
+            width: 120px; height: 80px; background-size: contain; background-repeat: no-repeat; background-position: center;
+            transform: translate(-50%, -50%) scale(0.8); opacity: 0.8;
+        }
     </style>
 </head>
 <body onclick="initApp()">
@@ -161,7 +184,7 @@
         <section class="panel wallet-panel">
             <div class="panel-header"><h2>👛 지갑</h2></div>
             <div id="money-source" class="money-source"></div>
-            <button style="margin-top: 15px; padding: 8px; cursor: pointer;" onclick="resetMoney()">💸 다시 지불</button>
+            <button style="margin-top: 15px; padding: 12px; cursor: pointer; border-radius:10px; border:1px solid #ddd;" onclick="resetMoney()">💸 다시 지불</button>
         </section>
     </main>
 
@@ -175,7 +198,7 @@
     <!-- 모달 창들 -->
     <div id="help-modal" class="modal">
         <div class="help-modal-content">
-            <h2 style="text-align:center; color:var(--help-color);">❓ 늘품마트 이용 가이드</h2>
+            <h2 style="text-align:center; color:var(--help-color); font-size: 1.4rem;">❓ 늘품마트 이용 가이드</h2>
             <div class="help-section">
                 <h4>🛒 학생용</h4>
                 <div class="help-step"><span class="step-num">1</span> <span>물건을 <strong>클릭</strong>하여 계산대에 담으세요.</span></div>
@@ -200,7 +223,7 @@
                 <input type="number" id="new-item-price" placeholder="가격 (원)">
                 <select id="new-item-level"><option value="1">Level 1</option><option value="2">Level 2</option></select>
                 <input type="file" id="new-item-image" accept="image/*">
-                <button onclick="addNewItem()" style="background:var(--admin-color); color:white; border:none; padding:10px; border-radius:8px; cursor:pointer;">등록하기</button>
+                <button onclick="addNewItem()" style="background:var(--admin-color); color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold;">등록하기</button>
             </div>
             <div id="admin-item-list"></div>
             <button onclick="closeAdmin()" style="width:100%; padding:10px; margin-top:20px; background:#333; color:white; border:none; border-radius:8px;">닫기</button>
@@ -208,7 +231,7 @@
     </div>
 
     <div id="modal" class="modal">
-        <div class="modal-content" style="width: 350px; font-family: monospace;">
+        <div class="modal-content" style="width: 100%; max-width: 350px; font-family: monospace;">
             <div style="text-align:center; font-size:1.5rem; font-weight:bold; border-bottom:2px solid #000; padding-bottom:10px; margin-bottom:15px;">영 수 증</div>
             <div id="receipt-content"></div>
             <div style="display:flex; justify-content:space-between; margin-top:15px; border-top:1px dashed #000; padding-top:10px; font-weight:bold;">
@@ -310,24 +333,74 @@
             displayList.forEach(curr => {
                 const div = document.createElement('div'); div.className = `money-item ${curr.class}`;
                 div.draggable = true; div.title = curr.label;
-                div.ondragstart = (e) => { playSound('click'); e.dataTransfer.setData('text', curr.val); e.dataTransfer.setData('class', curr.class); };
+                
+                // 마우스 드래그
+                div.ondragstart = (e) => { 
+                    playSound('click'); 
+                    e.dataTransfer.setData('text', curr.val); 
+                    e.dataTransfer.setData('class', curr.class); 
+                };
+
+                // 터치 드래그 지원
+                div.ontouchstart = (e) => handleTouchStart(e, curr);
+                div.ontouchmove = handleTouchMove;
+                div.ontouchend = handleTouchEnd;
+
                 source.appendChild(div);
             });
+        }
+
+        // 터치 드래그 로직
+        let touchTarget = null; let touchClone = null;
+        function handleTouchStart(e, curr) {
+            playSound('click');
+            touchTarget = curr;
+            const touch = e.touches[0];
+            touchClone = document.createElement('div');
+            touchClone.className = `touch-clone ${curr.class}`;
+            touchClone.style.left = touch.clientX + 'px';
+            touchClone.style.top = touch.clientY + 'px';
+            document.body.appendChild(touchClone);
+            e.preventDefault();
+        }
+        function handleTouchMove(e) {
+            if (!touchClone) return;
+            const touch = e.touches[0];
+            touchClone.style.left = touch.clientX + 'px';
+            touchClone.style.top = touch.clientY + 'px';
+            e.preventDefault();
+        }
+        function handleTouchEnd(e) {
+            if (!touchClone) return;
+            const touch = e.changedTouches[0];
+            const dropZoneRect = dropZone.getBoundingClientRect();
+            if (touch.clientX >= dropZoneRect.left && touch.clientX <= dropZoneRect.right &&
+                touch.clientY >= dropZoneRect.top && touch.clientY <= dropZoneRect.bottom) {
+                addMoneyToDropZone(touchTarget.val, touchTarget.class, touch.clientX - dropZoneRect.left, touch.clientY - dropZoneRect.top);
+            }
+            document.body.removeChild(touchClone);
+            touchClone = null; touchTarget = null;
         }
 
         const dropZone = document.getElementById('drop-zone');
         dropZone.ondragover = e => e.preventDefault();
         dropZone.ondrop = e => {
-            playSound('clink');
             const val = parseInt(e.dataTransfer.getData('text')); const cls = e.dataTransfer.getData('class');
+            const rect = dropZone.getBoundingClientRect();
+            addMoneyToDropZone(val, cls, e.clientX - rect.left, e.clientY - rect.top);
+        };
+
+        function addMoneyToDropZone(val, cls, x, y) {
+            playSound('clink');
             paidAmount += val;
             const m = document.createElement('div'); m.className = `money-item ${cls}`;
             m.style.position = 'absolute'; m.style.width = '120px';
-            m.style.left = (Math.random() * (dropZone.offsetWidth - 120)) + 'px';
-            m.style.top = (Math.random() * (dropZone.offsetHeight - 80)) + 'px';
+            // 위치 보정 (중앙 정렬)
+            m.style.left = (x - 60) + 'px';
+            m.style.top = (y - 40) + 'px';
             m.style.transform = `scale(0.6) rotate(${Math.random()*40-20}deg)`;
             dropZone.appendChild(m); updateUI();
-        };
+        }
 
         function addToCart(item) { cart.push({...item, cartId: Date.now() + Math.random()}); totalAmount += item.price; updateUI(); }
         function removeFromCart(cartId) { playSound('click'); const idx = cart.findIndex(i => i.cartId === cartId); if (idx > -1) { totalAmount -= cart[idx].price; cart.splice(idx, 1); updateUI(); } }
@@ -380,5 +453,6 @@
 
         init();
     </script>
+
 </body>
 </html>
