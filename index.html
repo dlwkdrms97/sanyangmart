@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>늘품마트 - "너의 가능성을 믿어"</title>
     <style>
         :root {
@@ -24,6 +24,7 @@
             display: flex; flex-direction: column; align-items: center;
             user-select: none;
             overflow-x: hidden;
+            touch-action: manipulation;
         }
 
         header {
@@ -58,87 +59,107 @@
         input[type=range] { width: 80px; cursor: pointer; }
 
         main {
-            display: grid; grid-template-columns: 1fr; gap: 20px;
             width: 100%; max-width: 1200px;
+            display: flex; flex-direction: column; gap: 15px;
         }
 
-        @media (min-width: 992px) {
-            main { grid-template-columns: 1fr 1.2fr 1fr; height: 750px; }
+        .shopping-view #store-panel { display: flex; }
+        .shopping-view #checkout-panel, .shopping-view #wallet-panel { display: none; }
+        
+        .payment-view #store-panel { display: none; }
+        .payment-view #checkout-panel, .payment-view #wallet-panel { display: flex; }
+
+        @media (min-width: 700px) {
+            .payment-view main { display: grid; grid-template-columns: 1fr 1fr; }
         }
 
-        .panel { background: white; border-radius: 25px; padding: 20px; box-shadow: 0 8px 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; min-height: 400px; }
+        .panel { 
+            background: white; border-radius: 25px; padding: 20px; 
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1); flex-direction: column; 
+            min-height: auto; 
+        }
+        @media (max-width: 700px) {
+            .panel { padding: 15px; }
+        }
+
         .panel-header { display: flex; justify-content: center; align-items: center; position: relative; margin-bottom: 15px; }
         .clear-cart-btn { position: absolute; right: 0; padding: 5px 10px; font-size: 0.8rem; background: #eee; border: none; border-radius: 8px; cursor: pointer; }
 
         h2 { text-align: center; color: #444; margin: 0; font-size: 1.5rem; }
 
-        .store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; overflow-y: auto; }
-        .item-card { background: #f8f9fa; border: 3px solid transparent; border-radius: 15px; padding: 15px; text-align: center; cursor: pointer; transition: all 0.2s; }
-        .item-card:hover { border-color: var(--primary-color); background: #e7f5ff; }
+        .store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; max-height: 550px; overflow-y: auto; padding: 15px; }
+        .item-card { background: #f8f9fa; border: 3px solid transparent; border-radius: 20px; padding: 15px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.03); }
+        .item-card:hover { border-color: var(--primary-color); background: #e7f5ff; transform: translateY(-5px); }
+        .item-card.selected { border-color: var(--success-color); background: #e8f5e9; }
         .item-img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; border-radius: 10px; }
         .item-emoji { font-size: 3rem; display: block; margin-bottom: 10px; }
         .item-price { font-weight: bold; color: var(--accent-color); font-size: 1.2rem; }
+        
+        .item-count-badge { 
+            position: absolute; top: -12px; right: -12px; 
+            background: var(--success-color); color: white; 
+            min-width: 36px; height: 36px; border-radius: 18px; 
+            display: flex; justify-content: center; align-items: center; 
+            font-weight: 800; font-size: 1.1rem; border: 3px solid white; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 10;
+            transition: all 0.2s;
+        }
+        .item-count-badge:hover { background: var(--accent-color); transform: scale(1.1); }
+        .item-count-badge .minus-sign { font-size: 1.2rem; margin-left: 2px; }
 
         .checkout-panel { background-color: var(--checkout-bg); }
-        .cart-list { flex-grow: 1; background: white; border-radius: 15px; padding: 10px; margin-bottom: 15px; overflow-y: auto; border: 2px dashed #adc6ff; min-height: 150px; }
+        .cart-list { flex-grow: 1; background: white; border-radius: 15px; padding: 10px; margin-bottom: 15px; overflow-y: auto; border: 2px dashed #adc6ff; min-height: 200px; max-height: 350px; }
         .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
         .remove-btn { background: #ff4d4f; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-weight: bold; }
 
         .total-display { font-size: 1.8rem; font-weight: 800; text-align: right; margin-bottom: 15px; color: #1e3a8a; }
-        .drop-zone { height: 200px; background: rgba(255,255,255,0.8); border: 4px dashed var(--primary-color); border-radius: 20px; position: relative; overflow: hidden; touch-action: none; }
-        .drop-zone.dragover { background: #d0ebff; }
+        .drop-zone { height: 250px; background: rgba(255,255,255,0.8); border: 4px dashed var(--primary-color); border-radius: 20px; position: relative; overflow: hidden; touch-action: none; transition: background 0.3s, border-color 0.3s; }
+        .drop-zone.dragover { background: #d0ebff; border-color: var(--success-color); border-style: solid; box-shadow: inset 0 0 20px rgba(74, 144, 226, 0.2); }
         .drop-zone::after { content: '여기에 돈을 놓으세요'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--primary-color); font-weight: bold; opacity: 0.5; pointer-events: none; text-align: center; width: 100%; }
 
         .paid-display { background: #fff; padding: 10px; border-radius: 10px; margin-top: 10px; font-size: 1.3rem; text-align: center; border: 2px solid var(--primary-color); }
 
         .wallet-panel { background-color: var(--wallet-bg); }
-        .money-source { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; align-items: center; padding-top: 10px; }
+        .money-source { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; align-items: center; padding-top: 10px; }
 
         .money-item {
-            width: 100%; height: 75px; background-color: transparent;
+            width: 100%; height: 85px; background-color: transparent;
             display: flex; justify-content: center; align-items: center; cursor: grab; 
             background-size: contain; background-repeat: no-repeat; background-position: center;
             color: transparent; border: none; box-shadow: none;
             touch-action: none;
+            transition: transform 0.1s;
         }
+        .money-item:active { transform: scale(1.1); }
         
         .money-1000  { background-image: url('1000.png'); }
         .money-5000  { background-image: url('5000.png'); }
         .money-10000 { background-image: url('10000.png'); }
         .money-50000 { background-image: url('50000.png'); }
-        .money-500   { background-image: url('500.png'); height: 70px; }
-        .money-100   { background-image: url('100.png'); height: 60px; }
+        .money-500   { background-image: url('500.png'); height: 80px; }
+        .money-100   { background-image: url('100.png'); height: 70px; }
 
-        .pay-btn { padding: 15px 40px; font-size: 1.3rem; background-color: #ccc; color: white; border: none; border-radius: 50px; cursor: not-allowed; transition: all 0.3s; margin-bottom: 40px; }
-        @media (min-width: 768px) {
-            .pay-btn { padding: 20px 60px; font-size: 1.5rem; }
-        }
+        .nav-btn { padding: 15px 40px; font-size: 1.3rem; color: white; border: none; border-radius: 50px; cursor: pointer; transition: all 0.3s; margin: 20px 0; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .to-payment-btn { background-color: var(--primary-color); }
+        .to-shopping-btn { background-color: #6c757d; font-size: 1rem; padding: 12px 30px; }
+        .pay-btn { background-color: #ccc; cursor: not-allowed; padding: 20px 60px; font-size: 1.5rem; }
         .pay-btn.enabled { background-color: var(--success-color); cursor: pointer; box-shadow: 0 6px 15px rgba(76, 175, 80, 0.4); }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; padding: 20px; box-sizing: border-box; }
         .modal-content { background: white; padding: 25px; border-radius: 20px; width: 100%; max-width: 500px; max-height: 85vh; overflow-y: auto; }
-        .help-modal-content { background: white; padding: 25px; border-radius: 20px; width: 100%; max-width: 700px; max-height: 85vh; overflow-y: auto; }
         
-        .help-section { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
-        .help-step { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; }
-        .step-num { background: var(--primary-color); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center; font-size: 0.8rem; flex-shrink: 0; }
-
-        .admin-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding: 15px; background: #f8f0ff; border-radius: 15px; }
-        .admin-form input, .admin-form select { padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
-        .admin-item-row { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #f0f0f0; gap: 10px; }
-        .delete-btn { background: #ff4d4f; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; }
-
         footer { position: fixed; bottom: 10px; left: 20px; font-size: 0.7rem; color: #aaa; text-align: left; pointer-events: none; z-index: -1; }
 
-        /* 터치 드래그용 가상 아이템 */
         .touch-clone {
             position: fixed; pointer-events: none; z-index: 2000;
-            width: 120px; height: 80px; background-size: contain; background-repeat: no-repeat; background-position: center;
-            transform: translate(-50%, -50%) scale(0.8); opacity: 0.8;
+            width: 140px; height: 90px; background-size: contain; background-repeat: no-repeat; background-position: center;
+            transform: translate(-50%, -50%) scale(0.9); opacity: 0.9;
+            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3));
         }
     </style>
 </head>
-<body onclick="initApp()">
+<body class="shopping-view" onclick="initApp()">
 
     <header>
         <div class="header-left">
@@ -165,12 +186,15 @@
     <audio id="bg-music" loop><source src="bgm.mp3" type="audio/mpeg"></audio>
 
     <main>
-        <section class="panel">
-            <div class="panel-header"><h2>🍎 상점</h2></div>
+        <section id="store-panel" class="panel">
+            <div class="panel-header"><h2>🍎 마트 진열대</h2></div>
             <div id="store-grid" class="store-grid"></div>
+            <div style="text-align:center;">
+                <button id="to-payment-btn" class="nav-btn to-payment-btn" onclick="toggleView(true)">담기 완료! 계산하러 가기 ➡️</button>
+            </div>
         </section>
 
-        <section class="panel checkout-panel">
+        <section id="checkout-panel" class="panel checkout-panel">
             <div class="panel-header">
                 <h2>🧾 계산대</h2>
                 <button class="clear-cart-btn" onclick="emptyCart()">전체 비우기</button>
@@ -179,16 +203,20 @@
             <div class="total-display">총액: <span id="total-amount">0</span>원</div>
             <div id="drop-zone" class="drop-zone"></div>
             <div class="paid-display">지불한 금액: <span id="paid-amount">0</span>원</div>
+            <div style="text-align:center;">
+                <button class="nav-btn to-shopping-btn" onclick="toggleView(false)">⬅️ 물건 더 담기</button>
+            </div>
         </section>
 
-        <section class="panel wallet-panel">
+        <section id="wallet-panel" class="panel wallet-panel">
             <div class="panel-header"><h2>👛 지갑</h2></div>
             <div id="money-source" class="money-source"></div>
             <button style="margin-top: 15px; padding: 12px; cursor: pointer; border-radius:10px; border:1px solid #ddd;" onclick="resetMoney()">💸 다시 지불</button>
+            <div style="margin-top:auto; padding-top:20px; text-align:center;">
+                <button id="pay-btn" class="nav-btn pay-btn" onclick="completePayment()">결제하기</button>
+            </div>
         </section>
     </main>
-
-    <div style="margin-top:20px;"><button id="pay-btn" class="pay-btn" onclick="completePayment()">결제하기</button></div>
 
     <footer>
         <div>Copyright 장근T</div>
@@ -200,16 +228,12 @@
         <div class="help-modal-content">
             <h2 style="text-align:center; color:var(--help-color); font-size: 1.4rem;">❓ 늘품마트 이용 가이드</h2>
             <div class="help-section">
-                <h4>🛒 학생용</h4>
-                <div class="help-step"><span class="step-num">1</span> <span>물건을 <strong>클릭</strong>하여 계산대에 담으세요.</span></div>
-                <div class="help-step"><span class="step-num">2</span> <span>돈을 <strong>드래그</strong>하여 계산대 상자 안에 놓으세요.</span></div>
-                <div class="help-step"><span class="step-num">3</span> <span><strong>결제하기</strong> 버튼을 누르고 영수증을 확인하세요.</span></div>
-            </div>
-            <div class="help-section">
-                <h4>⚙️ 교사용 (상품 등록)</h4>
-                <div class="help-step"><span class="step-num">1</span> <span>상단 <strong>[⚙️ 관리]</strong> 버튼을 누르세요.</span></div>
-                <div class="help-step"><span class="step-num">2</span> <span>이름, 가격을 적고 <strong>사진 파일</strong>을 업로드하세요.</span></div>
-                <div class="help-step"><span class="step-num">3</span> <span><strong>[등록하기]</strong>를 누르면 상점에 바로 나타납니다.</span></div>
+                <h4>🛒 쇼핑하기</h4>
+                <div style="display:flex; flex-direction:column; gap:10px; margin: 15px 0;">
+                    <div style="display:flex; align-items:center; gap:10px;"><span style="background:var(--primary-color); color:white; border-radius:50%; width:24px; height:24px; display:flex; justify-content:center; align-items:center;">1</span> <span>상점에서 사고 싶은 물건을 <strong>클릭</strong>하면 카트에 담깁니다.</span></div>
+                    <div style="display:flex; align-items:center; gap:10px;"><span style="background:var(--success-color); color:white; border-radius:50%; width:24px; height:24px; display:flex; justify-content:center; align-items:center;">-</span> <span>물건 위 <strong>숫자 배지(-)</strong>를 클릭하면 수량이 줄어듭니다.</span></div>
+                    <div style="display:flex; align-items:center; gap:10px;"><span style="background:var(--primary-color); color:white; border-radius:50%; width:24px; height:24px; display:flex; justify-content:center; align-items:center;">2</span> <span>다 골랐다면 <strong>[담기 완료]</strong>를 누르세요.</span></div>
+                </div>
             </div>
             <button onclick="closeHelp()" style="width:100%; padding:15px; background:var(--help-color); color:white; border:none; border-radius:12px; cursor:pointer; font-weight:bold;">알겠어요!</button>
         </div>
@@ -218,26 +242,29 @@
     <div id="admin-modal" class="modal">
         <div class="modal-content">
             <h3 style="color:var(--admin-color);">⚙️ 물건 관리</h3>
-            <div class="admin-form">
-                <input type="text" id="new-item-name" placeholder="물건 이름">
-                <input type="number" id="new-item-price" placeholder="가격 (원)">
-                <select id="new-item-level"><option value="1">Level 1</option><option value="2">Level 2</option></select>
+            <div class="admin-form" style="display:flex; flex-direction:column; gap:10px; background:#f8f0ff; padding:15px; border-radius:15px;">
+                <input type="text" id="new-item-name" placeholder="물건 이름" style="padding:10px; border-radius:8px; border:1px solid #ddd;">
+                <input type="number" id="new-item-price" placeholder="가격 (원)" style="padding:10px; border-radius:8px; border:1px solid #ddd;">
+                <select id="new-item-level" style="padding:10px; border-radius:8px; border:1px solid #ddd;"><option value="1">Level 1</option><option value="2">Level 2</option></select>
                 <input type="file" id="new-item-image" accept="image/*">
                 <button onclick="addNewItem()" style="background:var(--admin-color); color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold;">등록하기</button>
             </div>
-            <div id="admin-item-list"></div>
+            <div style="margin-top:15px; text-align:right;">
+                <button onclick="resetToDefaultItems()" style="font-size:0.8rem; color:#888; border:none; background:none; text-decoration:underline; cursor:pointer;">기본 품목으로 초기화</button>
+            </div>
+            <div id="admin-item-list" style="margin-top:20px;"></div>
             <button onclick="closeAdmin()" style="width:100%; padding:10px; margin-top:20px; background:#333; color:white; border:none; border-radius:8px;">닫기</button>
         </div>
     </div>
 
     <div id="modal" class="modal">
-        <div class="modal-content" style="width: 100%; max-width: 350px; font-family: monospace;">
+        <div class="modal-content" style="width: 100%; max-width: 350px; font-family: monospace; border:2px solid #000;">
             <div style="text-align:center; font-size:1.5rem; font-weight:bold; border-bottom:2px solid #000; padding-bottom:10px; margin-bottom:15px;">영 수 증</div>
             <div id="receipt-content"></div>
-            <div style="display:flex; justify-content:space-between; margin-top:15px; border-top:1px dashed #000; padding-top:10px; font-weight:bold;">
+            <div style="display:flex; justify-content:space-between; margin-top:15px; border-top:1px dashed #000; padding-top:10px; font-weight:bold; font-size:1.2rem;">
                 <span>거스름돈:</span><span id="receipt-change">0원</span>
             </div>
-            <button onclick="closeReceipt()" style="width:100%; padding:10px; margin-top:20px; background:#333; color:white; border:none; border-radius:8px;">닫기</button>
+            <button onclick="closeReceipt()" style="width:100%; padding:15px; margin-top:20px; background:#000; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem;">감사합니다 (닫기)</button>
         </div>
     </div>
 
@@ -306,51 +333,118 @@
 
         // --- 앱 로직 ---
         let currentLevel = 1; let cart = []; let totalAmount = 0; let paidAmount = 0;
+        
         const defaultItems = {
-            1: [{ id: 1, name: '우유', price: 1000, emoji: '🥛' }, { id: 2, name: '빵', price: 5000, emoji: '🍞' }],
-            2: [{ id: 5, name: '사탕', price: 700, emoji: '🍭' }, { id: 6, name: '주스', price: 1200, emoji: '🧃' }]
+            1: [
+                { id: 1, name: '우유', price: 1000, emoji: '🥛' },
+                { id: 2, name: '식빵', price: 2000, emoji: '🍞' },
+                { id: 3, name: '초코우유', price: 1000, emoji: '🍫' },
+                { id: 4, name: '생수', price: 1000, emoji: '💧' },
+                { id: 5, name: '포도주스', price: 2000, emoji: '🧃' },
+                { id: 6, name: '바나나', price: 3000, emoji: '🍌' },
+                { id: 7, name: '계란(10알)', price: 5000, emoji: '🥚' },
+                { id: 8, name: '큰 과자', price: 2000, emoji: '🍪' },
+                { id: 9, name: '쌀(1kg)', price: 4000, emoji: '🌾' },
+                { id: 10, name: '라면세트', price: 5000, emoji: '🍜' }
+            ],
+            2: [
+                { id: 11, name: '삼겹살', price: 12500, emoji: '🥩' },
+                { id: 12, name: '포도', price: 9800, emoji: '🍇' },
+                { id: 13, name: '수박', price: 19000, emoji: '🍉' },
+                { id: 14, name: '조각피자', price: 3500, emoji: '🍕' },
+                { id: 15, name: '오렌지주스', price: 2300, emoji: '🧃' },
+                { id: 16, name: '치즈', price: 4200, emoji: '🧀' },
+                { id: 17, name: '통닭', price: 11000, emoji: '🍗' },
+                { id: 18, name: '조각케이크', price: 5500, emoji: '🍰' },
+                { id: 19, name: '세제', price: 8900, emoji: '🧼' },
+                { id: 20, name: '딸기', price: 7500, emoji: '🍓' }
+            ]
         };
-        let customItems = JSON.parse(localStorage.getItem('neulpum_mart_items')) || defaultItems;
+
+        let customItems = JSON.parse(localStorage.getItem('neulpum_mart_items'));
+        if (!customItems || !customItems[1] || customItems[1].length < 10 || customItems[1][2].price === 500) {
+            customItems = defaultItems;
+            localStorage.setItem('neulpum_mart_items', JSON.stringify(customItems));
+        }
 
         function init() { renderStore(); renderWallet(); updateUI(); }
 
         function renderStore() {
             const grid = document.getElementById('store-grid'); grid.innerHTML = '';
             customItems[currentLevel].forEach(item => {
-                const card = document.createElement('div'); card.className = 'item-card';
-                card.onclick = () => { playSound('click'); addToCart(item); };
+                const cartItem = cart.find(i => i.id === item.id);
+                const count = cartItem ? cartItem.quantity : 0;
+                
+                const card = document.createElement('div'); 
+                card.className = `item-card ${count > 0 ? 'selected' : ''}`;
+                
                 let visual = item.img ? `<img src="${item.img}" class="item-img">` : `<span class="item-emoji">${item.emoji || '📦'}</span>`;
-                card.innerHTML = `${visual}<div style="font-weight:bold">${item.name}</div><div class="item-price">${item.price.toLocaleString()}원</div>`;
+                
+                card.innerHTML = `
+                    ${visual}
+                    <div style="font-weight:bold">${item.name}</div>
+                    <div class="item-price">${item.price.toLocaleString()}원</div>
+                `;
+
+                if (count > 0) {
+                    const badgeEl = document.createElement('div');
+                    badgeEl.className = 'item-count-badge';
+                    badgeEl.innerHTML = `${count}<span class="minus-sign">−</span>`;
+                    badgeEl.onclick = (e) => {
+                        e.stopPropagation();
+                        playSound('click');
+                        removeFromCart(item.id);
+                    };
+                    card.appendChild(badgeEl);
+                }
+
+                card.onclick = () => { 
+                    playSound('click'); 
+                    addToCart(item); 
+                };
+                
                 grid.appendChild(card);
             });
         }
 
+        function toggleView(isPayment) {
+            playSound('click');
+            if (isPayment && cart.length === 0) {
+                alert("물건을 먼저 골라주세요!");
+                return;
+            }
+            document.body.className = isPayment ? 'payment-view' : 'shopping-view';
+            window.scrollTo(0, 0);
+        }
+
         function renderWallet() {
             const source = document.getElementById('money-source'); source.innerHTML = '';
-            const notes = [{ val: 1000, label: '1,000원', class: 'money-1000' }, { val: 5000, label: '5,000원', class: 'money-5000' }, { val: 10000, label: '10,000원', class: 'money-10000' }, { val: 50000, label: '50,000원', class: 'money-50000' }];
-            const coins = [{ val: 500, label: '500원', class: 'money-500' }, { val: 100, label: '100원', class: 'money-100' }];
+            const notes = [
+                { val: 1000, label: '1,000원', class: 'money-1000' }, 
+                { val: 5000, label: '5,000원', class: 'money-5000' }, 
+                { val: 10000, label: '10,000원', class: 'money-10000' }, 
+                { val: 50000, label: '50,000원', class: 'money-50000' }
+            ];
+            const coins = [
+                { val: 500, label: '500원', class: 'money-500' }, 
+                { val: 100, label: '100원', class: 'money-100' }
+            ];
             const displayList = currentLevel === 1 ? [notes[0]] : [...notes, ...coins];
             displayList.forEach(curr => {
                 const div = document.createElement('div'); div.className = `money-item ${curr.class}`;
                 div.draggable = true; div.title = curr.label;
-                
-                // 마우스 드래그
                 div.ondragstart = (e) => { 
                     playSound('click'); 
                     e.dataTransfer.setData('text', curr.val); 
                     e.dataTransfer.setData('class', curr.class); 
                 };
-
-                // 터치 드래그 지원
                 div.ontouchstart = (e) => handleTouchStart(e, curr);
                 div.ontouchmove = handleTouchMove;
                 div.ontouchend = handleTouchEnd;
-
                 source.appendChild(div);
             });
         }
 
-        // 터치 드래그 로직
         let touchTarget = null; let touchClone = null;
         function handleTouchStart(e, curr) {
             playSound('click');
@@ -363,28 +457,50 @@
             document.body.appendChild(touchClone);
             e.preventDefault();
         }
+
         function handleTouchMove(e) {
             if (!touchClone) return;
             const touch = e.touches[0];
             touchClone.style.left = touch.clientX + 'px';
             touchClone.style.top = touch.clientY + 'px';
+            
+            // 드롭 존 시각적 피드백
+            const dropZoneRect = dropZone.getBoundingClientRect();
+            const buffer = 30;
+            if (touch.clientX >= dropZoneRect.left - buffer && touch.clientX <= dropZoneRect.right + buffer &&
+                touch.clientY >= dropZoneRect.top - buffer && touch.clientY <= dropZoneRect.bottom + buffer) {
+                dropZone.classList.add('dragover');
+            } else {
+                dropZone.classList.remove('dragover');
+            }
             e.preventDefault();
         }
+
         function handleTouchEnd(e) {
             if (!touchClone) return;
             const touch = e.changedTouches[0];
             const dropZoneRect = dropZone.getBoundingClientRect();
-            if (touch.clientX >= dropZoneRect.left && touch.clientX <= dropZoneRect.right &&
-                touch.clientY >= dropZoneRect.top && touch.clientY <= dropZoneRect.bottom) {
-                addMoneyToDropZone(touchTarget.val, touchTarget.class, touch.clientX - dropZoneRect.left, touch.clientY - dropZoneRect.top);
+            const buffer = 30; // 판정 범위 버퍼 확대
+            
+            if (touch.clientX >= dropZoneRect.left - buffer && touch.clientX <= dropZoneRect.right + buffer &&
+                touch.clientY >= dropZoneRect.top - buffer && touch.clientY <= dropZoneRect.bottom + buffer) {
+                
+                // 좌표 보정 (상자 안쪽으로)
+                let dropX = touch.clientX - dropZoneRect.left;
+                let dropY = touch.clientY - dropZoneRect.top;
+                addMoneyToDropZone(touchTarget.val, touchTarget.class, dropX, dropY);
             }
-            document.body.removeChild(touchClone);
+            
+            dropZone.classList.remove('dragover');
+            if (touchClone.parentNode) document.body.removeChild(touchClone);
             touchClone = null; touchTarget = null;
         }
 
         const dropZone = document.getElementById('drop-zone');
-        dropZone.ondragover = e => e.preventDefault();
-        dropZone.ondrop = e => {
+        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
+        dropZone.ondragleave = () => { dropZone.classList.remove('dragover'); };
+        dropZone.ondrop = (e) => {
+            dropZone.classList.remove('dragover');
             const val = parseInt(e.dataTransfer.getData('text')); const cls = e.dataTransfer.getData('class');
             const rect = dropZone.getBoundingClientRect();
             addMoneyToDropZone(val, cls, e.clientX - rect.left, e.clientY - rect.top);
@@ -395,28 +511,70 @@
             paidAmount += val;
             const m = document.createElement('div'); m.className = `money-item ${cls}`;
             m.style.position = 'absolute'; m.style.width = '120px';
-            // 위치 보정 (중앙 정렬)
-            m.style.left = (x - 60) + 'px';
-            m.style.top = (y - 40) + 'px';
+            
+            // 돈이 상자 밖으로 너무 나가지 않도록 배치 보정
+            const rect = dropZone.getBoundingClientRect();
+            let safeX = Math.max(10, Math.min(x - 60, rect.width - 110));
+            let safeY = Math.max(10, Math.min(y - 40, rect.height - 70));
+            
+            m.style.left = safeX + 'px';
+            m.style.top = safeY + 'px';
             m.style.transform = `scale(0.6) rotate(${Math.random()*40-20}deg)`;
             dropZone.appendChild(m); updateUI();
         }
 
-        function addToCart(item) { cart.push({...item, cartId: Date.now() + Math.random()}); totalAmount += item.price; updateUI(); }
-        function removeFromCart(cartId) { playSound('click'); const idx = cart.findIndex(i => i.cartId === cartId); if (idx > -1) { totalAmount -= cart[idx].price; cart.splice(idx, 1); updateUI(); } }
-        function emptyCart() { if (cart.length === 0) return; playSound('click'); cart = []; totalAmount = 0; updateUI(); }
+        function addToCart(item) { 
+            const existingItem = cart.find(i => i.id === item.id);
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({...item, quantity: 1});
+            }
+            totalAmount += item.price; 
+            updateUI(); 
+            renderStore();
+        }
+
+        function removeFromCart(itemId) { 
+            const idx = cart.findIndex(i => i.id === itemId); 
+            if (idx > -1) { 
+                totalAmount -= cart[idx].price; 
+                if (cart[idx].quantity > 1) {
+                    cart[idx].quantity -= 1;
+                } else {
+                    cart.splice(idx, 1); 
+                }
+                updateUI(); 
+                renderStore();
+            } 
+        }
+
+        function emptyCart() { if (cart.length === 0) return; playSound('click'); cart = []; totalAmount = 0; updateUI(); renderStore(); }
 
         function updateUI() {
             const cartDiv = document.getElementById('cart-list');
             cartDiv.innerHTML = cart.length === 0 ? '<div style="text-align:center; color:#888; margin-top:40px;">물건을 담아주세요</div>' : 
-                cart.map(i => `<div class="cart-item"><div><b>${i.name}</b><br><small>${i.price.toLocaleString()}원</small></div><button class="remove-btn" onclick="removeFromCart(${i.cartId})">X</button></div>`).join('');
+                cart.map(i => `<div class="cart-item"><div><b>${i.name} x ${i.quantity}</b><br><small>${(i.price * i.quantity).toLocaleString()}원</small></div><button class="remove-btn" onclick="removeFromCart(${i.id})">X</button></div>`).join('');
             document.getElementById('total-amount').innerText = totalAmount.toLocaleString();
             document.getElementById('paid-amount').innerText = paidAmount.toLocaleString();
             document.getElementById('pay-btn').classList.toggle('enabled', totalAmount > 0 && paidAmount >= totalAmount);
+            
+            const toPaymentBtn = document.getElementById('to-payment-btn');
+            const totalCount = cart.reduce((a, b) => a + b.quantity, 0);
+            toPaymentBtn.innerText = totalCount > 0 ? `${totalCount}개 담음 - 계산하러 가기 ➡️` : "담기 완료! 계산하러 가기 ➡️";
         }
 
         function resetMoney() { playSound('click'); paidAmount = 0; dropZone.innerHTML = ''; updateUI(); }
-        function setLevel(l) { playSound('click'); currentLevel = l; document.querySelectorAll('.level-btn').forEach((b, i) => b.classList.toggle('active', i+1 === l)); cart = []; totalAmount = 0; resetMoney(); renderStore(); renderWallet(); updateUI(); }
+        
+        function setLevel(l) { 
+            playSound('click'); 
+            currentLevel = l; 
+            document.querySelectorAll('.level-btn').forEach((b, i) => b.classList.toggle('active', i+1 === l)); 
+            cart = []; totalAmount = 0; resetMoney(); 
+            document.body.className = 'shopping-view';
+            renderStore(); renderWallet(); updateUI(); 
+        }
+
         function openHelp() { playSound('click'); document.getElementById('help-modal').style.display = 'flex'; }
         function closeHelp() { playSound('click'); document.getElementById('help-modal').style.display = 'none'; }
         function openAdmin() { playSound('click'); renderAdminList(); document.getElementById('admin-modal').style.display = 'flex'; }
@@ -426,13 +584,27 @@
             const list = document.getElementById('admin-item-list'); list.innerHTML = '';
             [1, 2].forEach(lvl => customItems[lvl].forEach(item => {
                 const row = document.createElement('div'); row.className = 'admin-item-row';
-                row.innerHTML = `<span>[Lv.${lvl}] ${item.name} (${item.price}원)</span><button class="delete-btn" onclick="deleteItem(${lvl}, ${item.id})">삭제</button>`;
+                row.style.display = 'flex'; row.style.justifyContent = 'space-between'; row.style.padding = '10px'; row.style.borderBottom = '1px solid #eee';
+                row.innerHTML = `<span>[Lv.${lvl}] ${item.name} (${item.price}원)</span><button class="delete-btn" onclick="deleteItem(${lvl}, ${item.id})" style="background:#ff4d4f; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">삭제</button>`;
                 list.appendChild(row);
             }));
         }
 
+        function resetToDefaultItems() {
+            if (confirm("모든 품목을 기본 리스트(각 레벨별 10개)로 초기화하시겠습니까?")) {
+                customItems = JSON.parse(JSON.stringify(defaultItems));
+                localStorage.setItem('neulpum_mart_items', JSON.stringify(customItems));
+                renderAdminList();
+                renderStore();
+                alert("초기화되었습니다.");
+            }
+        }
+
         async function addNewItem() {
-            const name = document.getElementById('new-item-name').value; const price = parseInt(document.getElementById('new-item-price').value); const lvl = document.getElementById('new-item-level').value; const file = document.getElementById('new-item-image').files[0];
+            const name = document.getElementById('new-item-name').value; 
+            const price = parseInt(document.getElementById('new-item-price').value); 
+            const lvl = document.getElementById('new-item-level').value; 
+            const file = document.getElementById('new-item-image').files[0];
             if (!name || !price) return alert("입력 확인");
             let imgData = file ? await toBase64(file) : null;
             customItems[lvl].push({ id: Date.now(), name, price, img: imgData });
@@ -445,14 +617,20 @@
         function completePayment() {
             if (paidAmount < totalAmount) return; playSound('success');
             const change = paidAmount - totalAmount;
-            document.getElementById('receipt-content').innerHTML = cart.map(i => `<div style="display:flex; justify-content:space-between"><span>${i.name}</span><span>${i.price.toLocaleString()}</span></div>`).join('') + `<hr><div>합계: ${totalAmount.toLocaleString()}원</div><div>낸돈: ${paidAmount.toLocaleString()}원</div>`;
+            document.getElementById('receipt-content').innerHTML = cart.map(i => `<div style="display:flex; justify-content:space-between"><span>${i.name} x ${i.quantity}</span><span>${(i.price * i.quantity).toLocaleString()}원</span></div>`).join('') + `<hr style="border:1px dashed #000; margin:15px 0;"><div style="display:flex; justify-content:space-between; font-weight:bold;"><span>합계:</span><span>${totalAmount.toLocaleString()}원</span></div><div style="display:flex; justify-content:space-between;"><span>낸 돈:</span><span>${paidAmount.toLocaleString()}원</span></div>`;
             document.getElementById('receipt-change').innerText = change.toLocaleString() + "원";
             document.getElementById('modal').style.display = 'flex';
         }
-        function closeReceipt() { document.getElementById('modal').style.display = 'none'; emptyCart(); resetMoney(); }
+
+        function closeReceipt() { 
+            document.getElementById('modal').style.display = 'none'; 
+            emptyCart(); 
+            resetMoney(); 
+            document.body.className = 'shopping-view';
+            window.scrollTo(0, 0);
+        }
 
         init();
     </script>
-
 </body>
 </html>
