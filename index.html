@@ -52,6 +52,7 @@
         .level-btn.active { background-color: var(--primary-color); color: white; }
         .level-btn { background-color: #eee; }
         .help-btn { background-color: var(--help-color); color: white; }
+        .qa-btn { background-color: #20c997; color: white; font-weight: bold; border: none; border-radius: 10px; padding: 10px 15px; cursor: pointer; transition: all 0.2s; }
         .admin-btn { background-color: var(--admin-color); color: white; }
         .music-btn { background-color: #5c7cfa; color: white; min-width: 100px; }
 
@@ -91,8 +92,13 @@
         .item-card { background: #f8f9fa; border: 3px solid transparent; border-radius: 20px; padding: 15px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.03); }
         .item-card:hover { border-color: var(--primary-color); background: #e7f5ff; transform: translateY(-5px); }
         .item-card.selected { border-color: var(--success-color); background: #e8f5e9; }
-        .item-img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; border-radius: 10px; }
-        .item-emoji { font-size: 3rem; display: block; margin-bottom: 10px; }
+        .item-img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; border-radius: 10px; transition: transform 0.2s; }
+        .item-img:not([src]), .item-img[src="null"] { display: none; }
+        .item-img:not([src]) + .item-emoji, .item-img[src="null"] + .item-emoji { display: block; }
+
+        .help-step-img { width: 100%; max-width: 200px; border-radius: 15px; margin: 10px 0; border: 3px solid #eee; }
+        .pulse { animation: pulse-animation 2s infinite; }
+        @keyframes pulse-animation { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
         .item-price { font-weight: bold; color: var(--accent-color); font-size: 1.2rem; }
         
         .item-count-badge { 
@@ -147,7 +153,18 @@
         .pay-btn.enabled { background-color: var(--success-color); cursor: pointer; box-shadow: 0 6px 15px rgba(76, 175, 80, 0.4); }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; padding: 20px; box-sizing: border-box; }
-        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 100%; max-width: 500px; max-height: 85vh; overflow-y: auto; }
+        .modal-content { background: white; padding: 30px; border-radius: 30px; width: 95%; max-width: 600px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 6px solid var(--help-color); }
+        .help-section { margin-bottom: 25px; padding: 15px; background: #fff9f0; border-radius: 20px; border: 2px dashed #ffec99; }
+        .help-step { display: flex; align-items: flex-start; gap: 15px; margin-bottom: 15px; }
+        .step-num { background: var(--help-color); color: white; border-radius: 50%; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; font-weight: bold; flex-shrink: 0; font-size: 1.1rem; box-shadow: 0 4px 8px rgba(255,146,43,0.3); }
+        .step-text { font-size: 1.1rem; line-height: 1.6; color: #444; }
+        .step-text strong { color: var(--primary-color); }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.8) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .modal.active .modal-content { animation: modalFadeIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
         
         footer { position: fixed; bottom: 10px; left: 20px; font-size: 0.7rem; color: #aaa; text-align: left; pointer-events: none; z-index: -1; }
 
@@ -179,6 +196,7 @@
                 <button id="music-btn" class="music-btn" onclick="toggleMusic()">배경음 OFF</button>
             </div>
             <button class="help-btn" onclick="openHelp()">❓ 도움말</button>
+            <button class="qa-btn" onclick="openQA()">💬 소통게시판</button>
             <button class="admin-btn" onclick="openAdmin()">⚙️ 관리</button>
         </div>
     </header>
@@ -225,17 +243,48 @@
 
     <!-- 모달 창들 -->
     <div id="help-modal" class="modal">
-        <div class="help-modal-content">
-            <h2 style="text-align:center; color:var(--help-color); font-size: 1.4rem;">❓ 늘품마트 이용 가이드</h2>
+        <div class="modal-content">
+            <h2 style="text-align:center; color:var(--help-color); font-size: 1.8rem; margin-bottom: 25px; font-weight: 900;">🌟 늘품마트 이용 가이드</h2>
+            
             <div class="help-section">
-                <h4>🛒 쇼핑하기</h4>
-                <div style="display:flex; flex-direction:column; gap:10px; margin: 15px 0;">
-                    <div style="display:flex; align-items:center; gap:10px;"><span style="background:var(--primary-color); color:white; border-radius:50%; width:24px; height:24px; display:flex; justify-content:center; align-items:center;">1</span> <span>상점에서 사고 싶은 물건을 <strong>클릭</strong>하면 카트에 담깁니다.</span></div>
-                    <div style="display:flex; align-items:center; gap:10px;"><span style="background:var(--success-color); color:white; border-radius:50%; width:24px; height:24px; display:flex; justify-content:center; align-items:center;">-</span> <span>물건 위 <strong>숫자 배지(-)</strong>를 클릭하면 수량이 줄어듭니다.</span></div>
-                    <div style="display:flex; align-items:center; gap:10px;"><span style="background:var(--primary-color); color:white; border-radius:50%; width:24px; height:24px; display:flex; justify-content:center; align-items:center;">2</span> <span>다 골랐다면 <strong>[담기 완료]</strong>를 누르세요.</span></div>
+                <h3 style="color:var(--primary-color); margin-bottom: 15px;">🛒 1단계: 물건 담기</h3>
+                <div class="help-step">
+                    <div class="step-num">1</div>
+                    <div class="step-text">진열대에서 사고 싶은 물건을 <strong>클릭</strong>하세요.</div>
+                </div>
+                <div class="help-step">
+                    <div class="step-num">2</div>
+                    <div class="step-text">물건을 잘못 담았다면 물건 위 <strong>숫자 배지( - )</strong>를 눌러 빼세요.</div>
+                </div>
+                <div class="help-step">
+                    <div class="step-num">3</div>
+                    <div class="step-text">모든 물건을 다 골랐다면 아래의 <strong>[계산하러 가기]</strong> 버튼을 누르세요.</div>
                 </div>
             </div>
-            <button onclick="closeHelp()" style="width:100%; padding:15px; background:var(--help-color); color:white; border:none; border-radius:12px; cursor:pointer; font-weight:bold;">알겠어요!</button>
+
+            <div class="help-section" style="background: #eefbff; border-color: #74c0fc;">
+                <h3 style="color:var(--success-color); margin-bottom: 15px;">💰 2단계: 돈 내기</h3>
+                <div class="help-step">
+                    <div class="step-num">4</div>
+                    <div class="step-text">오른쪽 지갑에서 <strong>지폐나 동전</strong>을 끌어서 상자 안에 놓으세요.</div>
+                </div>
+                <div class="help-step" style="background: white; padding: 10px; border-radius: 15px; margin: 10px 0;">
+                    <div class="step-text" style="font-size: 0.95rem; color: #666;">💡 <strong>팁:</strong> 총액보다 돈을 <strong>더 많이</strong> 내야 결제 버튼이 켜져요!</div>
+                </div>
+                <div class="help-step">
+                    <div class="step-num">5</div>
+                    <div class="step-text"><strong>[결제하기]</strong>를 누르고 영수증과 거스름돈을 꼭 확인하세요!</div>
+                </div>
+            </div>
+
+            <div class="help-section" style="background: #fff0f6; border-color: #ffdeeb;">
+                <h3 style="color:#d6336c; margin-bottom: 15px;">✨ 선생님을 위한 팁</h3>
+                <div class="help-step">
+                    <div class="step-text" style="font-size: 0.95rem;">상단 <strong>[⚙️ 관리]</strong> 버튼을 눌러 우리 반 학생이 좋아하는 물건 사진을 직접 등록할 수 있습니다.</div>
+                </div>
+            </div>
+
+            <button onclick="closeHelp()" class="pulse" style="width:100%; padding:20px; background:var(--help-color); color:white; border:none; border-radius:18px; cursor:pointer; font-weight:900; font-size: 1.2rem; box-shadow: 0 8px 15px rgba(255,146,43,0.3);">알겠어요! 즐거운 쇼핑 시작 🛍️</button>
         </div>
     </div>
 
@@ -268,7 +317,62 @@
         </div>
     </div>
 
+    <div id="qa-modal" class="modal">
+        <div class="modal-content" style="border-color: #20c997;">
+            <h2 style="text-align:center; color:#20c997; font-size: 1.8rem; margin-bottom: 20px; font-weight: 900;">✉️ 제작자에게 문의하기</h2>
+            
+            <div style="background: #f0fff4; padding: 25px; border-radius: 20px; margin-bottom: 10px; border: 2px solid #b2f2bb;">
+                <p style="margin-top:0; color:#2b8a3e; font-weight:bold; font-size:0.9rem; text-align:center; line-height:1.5;">
+                    늘품마트를 사용하며 궁금한 점이나<br/>응원 메시지를 제작자에게 보내주세요! 🌟
+                </p>
+                <input type="text" id="qa-name" placeholder="문의하시는 분 (이름/학교)" style="width:100%; padding:12px; border-radius:10px; border:1px solid #ddd; margin-bottom:12px; box-sizing:border-box; font-size:1rem;">
+                <textarea id="qa-text" placeholder="문의 내용을 입력해주세요. 전송된 메시지는 제작자만 확인할 수 있습니다." style="width:100%; padding:12px; border-radius:10px; border:1px solid #ddd; height:150px; margin-bottom:12px; box-sizing:border-box; font-family:inherit; font-size:1rem;"></textarea>
+                <button id="send-btn" onclick="sendInquiry()" style="width:100%; padding:18px; background:#20c997; color:white; border:none; border-radius:15px; cursor:pointer; font-weight:bold; font-size:1.2rem; box-shadow:0 6px 12px rgba(32,201,151,0.3);">메시지 보내기 🚀</button>
+            </div>
+            
+            <p style="text-align:center; font-size:0.8rem; color:#aaa;">보내신 문의는 비밀로 안전하게 전달됩니다.</p>
+            <button onclick="closeQA()" style="width:100%; padding:15px; margin-top:15px; background:#eee; color:#666; border:none; border-radius:15px; font-weight:bold;">닫기</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // --- 제작자 문의용 Supabase 설정 (아이온과 완전히 분리됨) ---
+        const SUPABASE_URL = 'https://yteyzdzqzuoujerlsioy.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0ZXl6ZHpxenVvdWplcmxzaW95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODg1OTksImV4cCI6MjA5MTE2NDU5OX0.leAd_KMp9wHmw9XqTb8FC86FdKTOudCfUgIzkIEaWaY';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function sendInquiry() {
+            const name = document.getElementById('qa-name').value.trim();
+            const text = document.getElementById('qa-text').value.trim();
+            const btn = document.getElementById('send-btn');
+
+            if (!name || !text) return alert("성함과 내용을 모두 입력해주세요!");
+
+            btn.disabled = true;
+            btn.innerText = "비밀 메시지 전달 중...";
+
+            try {
+                const { error } = await supabaseClient.from('mart_inquiries').insert([{
+                    sender: name,
+                    content: text
+                }]);
+
+                if (error) throw error;
+
+                playSound('success');
+                alert("제작자에게 문의가 안전하게 전달되었습니다! ❤️");
+                document.getElementById('qa-name').value = '';
+                document.getElementById('qa-text').value = '';
+                closeQA();
+            } catch (err) {
+                alert("전송 실패: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "메시지 보내기 🚀";
+            }
+        }
+
         // --- 사운드 엔진 ---
         let audioCtx = null;
         let isFirstInteraction = true;
@@ -363,7 +467,7 @@
 
         let customItems = JSON.parse(localStorage.getItem('neulpum_mart_items'));
         if (!customItems || !customItems[1] || customItems[1].length < 10 || customItems[1][2].price === 500) {
-            customItems = defaultItems;
+            customItems = JSON.parse(JSON.stringify(defaultItems));
             localStorage.setItem('neulpum_mart_items', JSON.stringify(customItems));
         }
 
@@ -608,10 +712,29 @@
             if (!name || !price) return alert("입력 확인");
             let imgData = file ? await toBase64(file) : null;
             customItems[lvl].push({ id: Date.now(), name, price, img: imgData });
-            localStorage.setItem('neulpum_mart_items', JSON.stringify(customItems));
-            playSound('success'); renderAdminList();
+            
+            try {
+                localStorage.setItem('neulpum_mart_items', JSON.stringify(customItems));
+                playSound('success'); renderAdminList();
+            } catch (e) {
+                alert("저장 공간이 부족합니다. 이미지 용량이 너무 클 수 있습니다.");
+                customItems[lvl].pop(); // 추가했던 데이터 롤백
+            }
         }
-        function deleteItem(lvl, id) { customItems[lvl] = customItems[lvl].filter(i => i.id !== id); localStorage.setItem('neulpum_mart_items', JSON.stringify(customItems)); renderAdminList(); }
+        function deleteItem(lvl, id) { 
+            customItems[lvl] = customItems[lvl].filter(i => i.id !== id); 
+            localStorage.setItem('neulpum_mart_items', JSON.stringify(customItems)); 
+            
+            // 장바구니 동기화 로직 추가 (삭제된 물건을 카트에서도 뺌)
+            const cartItem = cart.find(i => i.id === id);
+            if (cartItem) {
+                totalAmount -= cartItem.price * cartItem.quantity;
+                cart = cart.filter(i => i.id !== id);
+                updateUI();
+            }
+            
+            renderAdminList(); 
+        }
         const toBase64 = file => new Promise((r, j) => { const rd = new FileReader(); rd.readAsDataURL(file); rd.onload = () => r(rd.result); });
 
         function completePayment() {
@@ -628,6 +751,48 @@
             resetMoney(); 
             document.body.className = 'shopping-view';
             window.scrollTo(0, 0);
+        }
+
+        // --- 제작자 문의 로직 (Supabase) ---
+        function openQA() {
+            playSound('click');
+            document.getElementById('qa-modal').style.display = 'flex';
+        }
+
+        function closeQA() {
+            playSound('click');
+            document.getElementById('qa-modal').style.display = 'none';
+        }
+
+        async function sendInquiry() {
+            const name = document.getElementById('qa-name').value.trim();
+            const text = document.getElementById('qa-text').value.trim();
+            const btn = document.getElementById('send-btn');
+
+            if (!name || !text) return alert("이름과 내용을 모두 입력해주세요!");
+
+            btn.disabled = true;
+            btn.innerText = "전송 중...";
+
+            try {
+                const { error } = await supabaseClient.from('mart_inquiries').insert([{
+                    sender: name,
+                    content: text
+                }]);
+
+                if (error) throw error;
+
+                playSound('success');
+                alert("제작자에게 문의가 안전하게 전달되었습니다! ❤️");
+                document.getElementById('qa-name').value = '';
+                document.getElementById('qa-text').value = '';
+                closeQA();
+            } catch (err) {
+                alert("전송 실패: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "메시지 보내기 🚀";
+            }
         }
 
         init();
