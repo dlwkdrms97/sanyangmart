@@ -168,11 +168,91 @@
         
         footer { position: fixed; bottom: 10px; left: 20px; font-size: 0.7rem; color: #aaa; text-align: left; pointer-events: none; z-index: -1; }
 
+        /* 결제 피드백 메시지 */
+        .payment-feedback {
+            text-align: center;
+            padding: 12px 18px;
+            border-radius: 14px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin: 10px 0;
+            min-height: 46px;
+            transition: all 0.3s ease;
+        }
+        .payment-feedback.need-more {
+            background: #fff3cd;
+            color: #7c5a00;
+            border: 2px dashed #ffc107;
+            animation: feedback-bounce 1.8s ease-in-out infinite;
+        }
+        .payment-feedback.just-right {
+            background: #d1fae5;
+            color: #065f46;
+            border: 2px solid #34d399;
+            animation: feedback-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes feedback-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+        @keyframes feedback-pop {
+            from { transform: scale(0.85); opacity: 0.5; }
+            to   { transform: scale(1);    opacity: 1; }
+        }
+
+        /* 돈 충분할 때 드롭존 색 변경 */
+        .drop-zone.paid-ok {
+            background: rgba(209, 250, 229, 0.6);
+            border-color: #34d399;
+            border-style: solid;
+        }
+
         .touch-clone {
             position: fixed; pointer-events: none; z-index: 2000;
             width: 140px; height: 90px; background-size: contain; background-repeat: no-repeat; background-position: center;
             transform: translate(-50%, -50%) scale(0.9); opacity: 0.9;
             filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3));
+        }
+
+        /* ── #4 스캐폴딩 힌트 ── */
+        .money-item.hint-glow {
+            animation: hint-pulse 0.7s ease-in-out infinite alternate;
+            filter: drop-shadow(0 0 8px #ffd43b) drop-shadow(0 0 18px #ffd43b);
+        }
+        @keyframes hint-pulse {
+            from { transform: scale(1); }
+            to   { transform: scale(1.18); }
+        }
+
+        /* ── #6 예산 배지 ── */
+        .budget-badge {
+            background: #fff3cd; border: 2px solid #ffc107; border-radius: 10px;
+            padding: 8px 14px; font-weight: bold; color: #7c5a00; font-size: 0.9rem;
+            margin-bottom: 8px; text-align: center; display: none;
+        }
+        .budget-badge.exceeded { background: #fee2e2; border-color: #ef4444; color: #b91c1c; }
+
+        /* ── #2 거스름돈 게임 ── */
+        .change-game-bills {
+            display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; padding: 10px 0;
+        }
+        .change-bill {
+            width: 110px; height: 70px; cursor: pointer;
+            background-size: contain; background-repeat: no-repeat; background-position: center;
+            border-radius: 8px; border: 3px solid #ddd; transition: all 0.2s;
+        }
+        .change-coin {
+            width: 70px; height: 70px; cursor: pointer;
+            background-size: contain; background-repeat: no-repeat; background-position: center;
+            border-radius: 50%; border: 3px solid #ddd; transition: all 0.2s;
+        }
+        .change-bill:hover, .change-coin:hover { transform: scale(1.08); border-color: var(--primary-color); }
+        .change-bill.picked, .change-coin.picked { border-color: var(--success-color); opacity: 0.5; transform: scale(0.9); }
+
+        /* ── #3 세션 통계 ── */
+        .session-stats {
+            background: #f8f9fa; border-radius: 10px; padding: 8px 14px;
+            font-size: 0.82rem; color: #555; margin-top: 8px; border: 1px solid #dee2e6; text-align: center;
         }
     </style>
 </head>
@@ -180,8 +260,10 @@
 
     <header>
         <div class="header-left">
-            <button class="level-btn active" onclick="setLevel(1)">Level 1</button>
-            <button class="level-btn" onclick="setLevel(2)">Level 2</button>
+            <button class="level-btn active" onclick="setLevel(1)">Lv.1</button>
+            <button class="level-btn" onclick="setLevel(2)">Lv.2</button>
+            <button class="level-btn" onclick="setLevel(3)">Lv.3</button>
+            <button class="level-btn" onclick="setLevel(4)">Lv.4</button>
         </div>
         
         <div class="header-center">
@@ -221,6 +303,7 @@
             <div class="total-display">총액: <span id="total-amount">0</span>원</div>
             <div id="drop-zone" class="drop-zone"></div>
             <div class="paid-display">지불한 금액: <span id="paid-amount">0</span>원</div>
+            <div id="payment-feedback" class="payment-feedback"></div>
             <div style="text-align:center;">
                 <button class="nav-btn to-shopping-btn" onclick="toggleView(false)">⬅️ 물건 더 담기</button>
             </div>
@@ -228,6 +311,7 @@
 
         <section id="wallet-panel" class="panel wallet-panel">
             <div class="panel-header"><h2>👛 지갑</h2></div>
+            <div id="budget-display" class="budget-badge"></div>
             <div id="money-source" class="money-source"></div>
             <button style="margin-top: 15px; padding: 12px; cursor: pointer; border-radius:10px; border:1px solid #ddd;" onclick="resetMoney()">💸 다시 지불</button>
             <div style="margin-top:auto; padding-top:20px; text-align:center;">
@@ -245,42 +329,79 @@
     <div id="help-modal" class="modal">
         <div class="modal-content">
             <h2 style="text-align:center; color:var(--help-color); font-size: 1.8rem; margin-bottom: 25px; font-weight: 900;">🌟 늘품마트 이용 가이드</h2>
-            
-            <div class="help-section">
-                <h3 style="color:var(--primary-color); margin-bottom: 15px;">🛒 1단계: 물건 담기</h3>
+
+            <!-- 난이도 선택 -->
+            <div class="help-section" style="background: #f3f0ff; border-color: #b197fc;">
+                <h3 style="color:#7048e8; margin-bottom: 15px;">🎯 0단계: 난이도 고르기</h3>
                 <div class="help-step">
-                    <div class="step-num">1</div>
-                    <div class="step-text">진열대에서 사고 싶은 물건을 <strong>클릭</strong>하세요.</div>
+                    <div class="step-num" style="background:#7048e8;">1</div>
+                    <div class="step-text">화면 위쪽 <strong>Lv.1 ~ Lv.4 버튼</strong>으로 난이도를 골라요.</div>
                 </div>
-                <div class="help-step">
-                    <div class="step-num">2</div>
-                    <div class="step-text">물건을 잘못 담았다면 물건 위 <strong>숫자 배지( - )</strong>를 눌러 빼세요.</div>
-                </div>
-                <div class="help-step">
-                    <div class="step-num">3</div>
-                    <div class="step-text">모든 물건을 다 골랐다면 아래의 <strong>[계산하러 가기]</strong> 버튼을 누르세요.</div>
+                <div style="background:white; border-radius:12px; padding:10px 14px; margin-top:8px; font-size:0.9rem; line-height:1.9; color:#495057;">
+                    🟢 <strong>Lv.1</strong> — 1,000원권만 사용 (가장 쉬움)<br>
+                    🔵 <strong>Lv.2</strong> — 1,000원 + 5,000원권<br>
+                    🟠 <strong>Lv.3</strong> — 500원 동전 + 10,000원권 추가<br>
+                    🔴 <strong>Lv.4</strong> — 모든 화폐 사용 (복합금액)
                 </div>
             </div>
 
+            <!-- 물건 담기 -->
+            <div class="help-section">
+                <h3 style="color:var(--primary-color); margin-bottom: 15px;">🛒 1단계: 물건 담기</h3>
+                <div class="help-step">
+                    <div class="step-num">2</div>
+                    <div class="step-text">진열대에서 사고 싶은 물건을 <strong>클릭</strong>하세요.</div>
+                </div>
+                <div class="help-step">
+                    <div class="step-num">3</div>
+                    <div class="step-text">잘못 담았다면 장바구니의 <strong>[X]</strong> 버튼을 눌러 빼세요.</div>
+                </div>
+                <div class="help-step">
+                    <div class="step-num">4</div>
+                    <div class="step-text">다 골랐다면 <strong>[계산하러 가기]</strong> 버튼을 누르세요.</div>
+                </div>
+            </div>
+
+            <!-- 돈 내기 -->
             <div class="help-section" style="background: #eefbff; border-color: #74c0fc;">
                 <h3 style="color:var(--success-color); margin-bottom: 15px;">💰 2단계: 돈 내기</h3>
                 <div class="help-step">
-                    <div class="step-num">4</div>
-                    <div class="step-text">오른쪽 지갑에서 <strong>지폐나 동전</strong>을 끌어서 상자 안에 놓으세요.</div>
+                    <div class="step-num">5</div>
+                    <div class="step-text">지갑에서 <strong>지폐나 동전</strong>을 끌어서 파란 상자 안에 놓으세요.</div>
                 </div>
                 <div class="help-step" style="background: white; padding: 10px; border-radius: 15px; margin: 10px 0;">
                     <div class="step-text" style="font-size: 0.95rem; color: #666;">💡 <strong>팁:</strong> 총액보다 돈을 <strong>더 많이</strong> 내야 결제 버튼이 켜져요!</div>
                 </div>
+                <div class="help-step" style="background: #fff3bf; padding: 10px; border-radius: 15px; margin: 10px 0;">
+                    <div class="step-text" style="font-size: 0.95rem; color: #7c5a00;">✨ <strong>힌트:</strong> 돈이 자꾸 부족하면 <strong>반짝이는 지폐</strong>를 써보세요!</div>
+                </div>
                 <div class="help-step">
-                    <div class="step-num">5</div>
-                    <div class="step-text"><strong>[결제하기]</strong>를 누르고 영수증과 거스름돈을 꼭 확인하세요!</div>
+                    <div class="step-num">6</div>
+                    <div class="step-text"><strong>[결제하기]</strong>를 눌러 영수증을 확인하세요.</div>
                 </div>
             </div>
 
+            <!-- 거스름돈 게임 -->
+            <div class="help-section" style="background: #ebfbee; border-color: #8ce99a;">
+                <h3 style="color:#2b8a3e; margin-bottom: 15px;">🎮 3단계: 거스름돈 받기 게임</h3>
+                <div class="help-step">
+                    <div class="step-num" style="background:#2b8a3e;">7</div>
+                    <div class="step-text">거스름돈이 있으면 <strong>[거스름돈 받아보기]</strong> 버튼이 나타나요.</div>
+                </div>
+                <div class="help-step">
+                    <div class="step-num" style="background:#2b8a3e;">8</div>
+                    <div class="step-text">화면에서 거스름돈 금액과 <strong>딱 맞는 지폐·동전</strong>을 골라 탭하세요. 정확하면 🎉 가 뜨고 다음 쇼핑으로 넘어가요!</div>
+                </div>
+            </div>
+
+            <!-- 선생님 팁 -->
             <div class="help-section" style="background: #fff0f6; border-color: #ffdeeb;">
                 <h3 style="color:#d6336c; margin-bottom: 15px;">✨ 선생님을 위한 팁</h3>
                 <div class="help-step">
-                    <div class="step-text" style="font-size: 0.95rem;">상단 <strong>[⚙️ 관리]</strong> 버튼을 눌러 우리 반 학생이 좋아하는 물건 사진을 직접 등록할 수 있습니다.</div>
+                    <div class="step-text" style="font-size: 0.95rem;">상단 <strong>[⚙️ 관리]</strong> 버튼으로 학생이 좋아하는 물건 사진을 직접 등록하거나, <strong>오늘 예산</strong>을 설정할 수 있습니다.</div>
+                </div>
+                <div class="help-step" style="margin-top:8px;">
+                    <div class="step-text" style="font-size: 0.95rem;">영수증 하단 <strong>📊 학습 통계</strong>에서 오늘 몇 번 성공했는지, 평균 거스름돈이 얼마인지 확인할 수 있어요.</div>
                 </div>
             </div>
 
@@ -290,11 +411,29 @@
 
     <div id="admin-modal" class="modal">
         <div class="modal-content">
-            <h3 style="color:var(--admin-color);">⚙️ 물건 관리</h3>
+            <h3 style="color:var(--admin-color);">⚙️ 관리자 설정</h3>
+
+            <!-- 예산 설정 (#6) -->
+            <div style="background:#fff3cd; padding:15px; border-radius:15px; margin-bottom:15px; border:2px solid #ffc107;">
+                <h4 style="margin:0 0 10px; color:#7c5a00;">💰 수업 예산 설정</h4>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <input type="number" id="budget-input" placeholder="예산 (원, 0=제한없음)" style="flex:1; padding:10px; border-radius:8px; border:1px solid #ddd;">
+                    <button onclick="saveBudget()" style="padding:10px 16px; background:#f59f00; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">저장</button>
+                </div>
+                <p style="margin:8px 0 0; font-size:0.8rem; color:#7c5a00;">0원으로 설정하면 예산 제한이 없어집니다.</p>
+            </div>
+
+            <!-- 물건 등록 -->
+            <h4 style="color:var(--admin-color); margin:0 0 10px;">🛒 물건 등록</h4>
             <div class="admin-form" style="display:flex; flex-direction:column; gap:10px; background:#f8f0ff; padding:15px; border-radius:15px;">
                 <input type="text" id="new-item-name" placeholder="물건 이름" style="padding:10px; border-radius:8px; border:1px solid #ddd;">
                 <input type="number" id="new-item-price" placeholder="가격 (원)" style="padding:10px; border-radius:8px; border:1px solid #ddd;">
-                <select id="new-item-level" style="padding:10px; border-radius:8px; border:1px solid #ddd;"><option value="1">Level 1</option><option value="2">Level 2</option></select>
+                <select id="new-item-level" style="padding:10px; border-radius:8px; border:1px solid #ddd;">
+                    <option value="1">Lv.1 (1,000원권)</option>
+                    <option value="2">Lv.2 (1,000+5,000원권)</option>
+                    <option value="3">Lv.3 (500원 단위+10,000원권)</option>
+                    <option value="4">Lv.4 (전체 화폐, 복합금액)</option>
+                </select>
                 <input type="file" id="new-item-image" accept="image/*">
                 <button onclick="addNewItem()" style="background:var(--admin-color); color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold;">등록하기</button>
             </div>
@@ -313,7 +452,29 @@
             <div style="display:flex; justify-content:space-between; margin-top:15px; border-top:1px dashed #000; padding-top:10px; font-weight:bold; font-size:1.2rem;">
                 <span>거스름돈:</span><span id="receipt-change">0원</span>
             </div>
-            <button onclick="closeReceipt()" style="width:100%; padding:15px; margin-top:20px; background:#000; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem;">감사합니다 (닫기)</button>
+            <div id="receipt-badge"></div>
+            <div id="receipt-stats" class="session-stats" style="display:none;"></div>
+            <button id="receipt-close-btn" style="width:100%; padding:15px; margin-top:20px; background:#000; color:white; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem;">감사합니다 (닫기)</button>
+        </div>
+    </div>
+
+    <!-- 거스름돈 게임 모달 -->
+    <div id="change-game-modal" class="modal">
+        <div class="modal-content" style="border-color:#20c997; max-width:480px;">
+            <h2 style="text-align:center; color:#20c997; margin-bottom:5px;">💰 거스름돈 받아보기</h2>
+            <p style="text-align:center; color:#666; margin-top:0; font-size:1rem;">
+                거스름돈 <strong id="change-game-target" style="color:#1e3a8a; font-size:1.4rem;">0원</strong>이에요.<br>
+                <span style="font-size:0.9rem;">해당하는 돈을 골라 탭하세요!</span>
+            </p>
+            <div id="change-game-bills" class="change-game-bills"></div>
+            <div style="text-align:center; margin:12px 0; font-size:1.15rem; font-weight:bold;">
+                모은 돈: <span id="change-game-total" style="color:#1e3a8a;">0원</span>
+            </div>
+            <div id="change-game-feedback" style="text-align:center; min-height:28px; font-weight:bold; font-size:1rem;"></div>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button onclick="skipChangeGame()" style="flex:1; padding:12px; background:#eee; color:#555; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">건너뛰기</button>
+                <button onclick="resetChangePile()" style="flex:1; padding:12px; background:#fff3cd; color:#7c5a00; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">🔄 다시 선택</button>
+            </div>
         </div>
     </div>
 
@@ -337,41 +498,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // --- 제작자 문의용 Supabase 설정 (아이온과 완전히 분리됨) ---
+        // --- Supabase 설정 (제작자 문의용) ---
         const SUPABASE_URL = 'https://yteyzdzqzuoujerlsioy.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl0ZXl6ZHpxenVvdWplcmxzaW95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODg1OTksImV4cCI6MjA5MTE2NDU5OX0.leAd_KMp9wHmw9XqTb8FC86FdKTOudCfUgIzkIEaWaY';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        async function sendInquiry() {
-            const name = document.getElementById('qa-name').value.trim();
-            const text = document.getElementById('qa-text').value.trim();
-            const btn = document.getElementById('send-btn');
-
-            if (!name || !text) return alert("성함과 내용을 모두 입력해주세요!");
-
-            btn.disabled = true;
-            btn.innerText = "비밀 메시지 전달 중...";
-
-            try {
-                const { error } = await supabaseClient.from('mart_inquiries').insert([{
-                    sender: name,
-                    content: text
-                }]);
-
-                if (error) throw error;
-
-                playSound('success');
-                alert("제작자에게 문의가 안전하게 전달되었습니다! ❤️");
-                document.getElementById('qa-name').value = '';
-                document.getElementById('qa-text').value = '';
-                closeQA();
-            } catch (err) {
-                alert("전송 실패: " + err.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "메시지 보내기 🚀";
-            }
-        }
 
         // --- 사운드 엔진 ---
         let audioCtx = null;
@@ -412,6 +542,8 @@
 
         function playSound(type) {
             if (!audioCtx) return;
+            // 브라우저가 AudioContext를 중단시켰을 때 자동 복구
+            if (audioCtx.state === 'suspended') audioCtx.resume();
             const now = audioCtx.currentTime;
             if (type === 'click') {
                 const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
@@ -436,40 +568,109 @@
         }
 
         // --- 앱 로직 ---
-        let currentLevel = 1; let cart = []; let totalAmount = 0; let paidAmount = 0;
-        
+        let currentLevel = 1;
+        let cart = []; let totalAmount = 0; let paidAmount = 0;
+        let insufficientAttempts = 0;   // #4 스캐폴딩: 돈을 넣어도 부족한 횟수
+        let sessionStats = { payments: 0, totalExcess: 0 }; // #3 학습 통계
+        let budgetAmount = 0;           // #6 예산 (0 = 제한 없음)
+        let changeTarget  = 0;          // #2 거스름돈 게임 목표 금액
+
+        // #5 레벨별 사용 가능 화폐 단위
+        const levelDenominations = {
+            1: [1000],
+            2: [1000, 5000],
+            3: [500, 1000, 5000, 10000],
+            4: [100, 500, 1000, 5000, 10000, 50000]
+        };
+
+        const levelLabels = {
+            1: '1,000원권만',
+            2: '1,000+5,000원권',
+            3: '500원 단위 · 10,000원권',
+            4: '전체 화폐 · 복합금액'
+        };
+
         const defaultItems = {
+            // Lv.1: 1,000원 단위 — 1,000원권만으로 계산 가능
             1: [
-                { id: 1, name: '우유', price: 1000, emoji: '🥛' },
-                { id: 2, name: '식빵', price: 2000, emoji: '🍞' },
-                { id: 3, name: '초코우유', price: 1000, emoji: '🍫' },
-                { id: 4, name: '생수', price: 1000, emoji: '💧' },
-                { id: 5, name: '포도주스', price: 2000, emoji: '🧃' },
-                { id: 6, name: '바나나', price: 3000, emoji: '🍌' },
-                { id: 7, name: '계란(10알)', price: 5000, emoji: '🥚' },
-                { id: 8, name: '큰 과자', price: 2000, emoji: '🍪' },
-                { id: 9, name: '쌀(1kg)', price: 4000, emoji: '🌾' },
-                { id: 10, name: '라면세트', price: 5000, emoji: '🍜' }
+                { id: 1,  name: '우유',      price: 1000, emoji: '🥛' },
+                { id: 2,  name: '초코우유',  price: 1000, emoji: '🍫' },
+                { id: 3,  name: '생수',      price: 1000, emoji: '💧' },
+                { id: 4,  name: '식빵',      price: 2000, emoji: '🍞' },
+                { id: 5,  name: '포도주스',  price: 2000, emoji: '🧃' },
+                { id: 6,  name: '큰 과자',   price: 2000, emoji: '🍪' },
+                { id: 7,  name: '바나나',    price: 3000, emoji: '🍌' },
+                { id: 8,  name: '쌀(1kg)',   price: 4000, emoji: '🌾' },
+                { id: 9,  name: '계란(10알)', price: 5000, emoji: '🥚' },
+                { id: 10, name: '라면세트',  price: 5000, emoji: '🍜' }
             ],
+            // Lv.2: 1,000원 단위 — 5,000원권 필요
             2: [
-                { id: 11, name: '삼겹살', price: 12500, emoji: '🥩' },
-                { id: 12, name: '포도', price: 9800, emoji: '🍇' },
-                { id: 13, name: '수박', price: 19000, emoji: '🍉' },
-                { id: 14, name: '조각피자', price: 3500, emoji: '🍕' },
+                { id: 21, name: '아이스크림', price: 2000, emoji: '🍦' },
+                { id: 22, name: '주스',       price: 3000, emoji: '🥤' },
+                { id: 23, name: '과자세트',   price: 5000, emoji: '🍿' },
+                { id: 24, name: '음료수',     price: 6000, emoji: '🧃' },
+                { id: 25, name: '아이스티',   price: 7000, emoji: '🍵' },
+                { id: 26, name: '샌드위치',   price: 8000, emoji: '🥪' },
+                { id: 27, name: '도시락',     price: 9000, emoji: '🍱' },
+                { id: 28, name: '김밥',       price: 4000, emoji: '🍙' },
+                { id: 29, name: '떡볶이',     price: 5000, emoji: '🌶️' },
+                { id: 30, name: '튀김세트',   price: 6000, emoji: '🍤' }
+            ],
+            // Lv.3: 500원 단위 — 10,000원권 필요
+            3: [
+                { id: 31, name: '삼각김밥',  price: 1500, emoji: '🍙' },
+                { id: 32, name: '커피우유',  price: 2500, emoji: '☕' },
+                { id: 33, name: '핫도그',    price: 3500, emoji: '🌭' },
+                { id: 34, name: '치킨너겟',  price: 4500, emoji: '🍗' },
+                { id: 35, name: '과일주스',  price: 5500, emoji: '🍊' },
+                { id: 36, name: '샐러드',    price: 6500, emoji: '🥗' },
+                { id: 37, name: '파스타',    price: 7500, emoji: '🍝' },
+                { id: 38, name: '피자조각',  price: 3500, emoji: '🍕' },
+                { id: 39, name: '세트메뉴',  price: 8500, emoji: '🍱' },
+                { id: 40, name: '버거',      price: 6500, emoji: '🍔' }
+            ],
+            // Lv.4: 복합금액 — 전체 화폐 (기존 Level 2 이전)
+            4: [
+                { id: 11, name: '삼겹살',    price: 12500, emoji: '🥩' },
+                { id: 12, name: '포도',      price: 9800,  emoji: '🍇' },
+                { id: 13, name: '수박',      price: 19000, emoji: '🍉' },
+                { id: 14, name: '조각피자',  price: 3500,  emoji: '🍕' },
                 { id: 15, name: '오렌지주스', price: 2300, emoji: '🧃' },
-                { id: 16, name: '치즈', price: 4200, emoji: '🧀' },
-                { id: 17, name: '통닭', price: 11000, emoji: '🍗' },
+                { id: 16, name: '치즈',      price: 4200,  emoji: '🧀' },
+                { id: 17, name: '통닭',      price: 11000, emoji: '🍗' },
                 { id: 18, name: '조각케이크', price: 5500, emoji: '🍰' },
-                { id: 19, name: '세제', price: 8900, emoji: '🧼' },
-                { id: 20, name: '딸기', price: 7500, emoji: '🍓' }
+                { id: 19, name: '세제',      price: 8900,  emoji: '🧼' },
+                { id: 20, name: '딸기',      price: 7500,  emoji: '🍓' }
             ]
         };
 
-        let customItems = JSON.parse(localStorage.getItem('neulpum_mart_items'));
-        if (!customItems || !customItems[1] || customItems[1].length < 10 || customItems[1][2].price === 500) {
-            customItems = JSON.parse(JSON.stringify(defaultItems));
-            localStorage.setItem('neulpum_mart_items', JSON.stringify(customItems));
+        // localStorage 안전 저장 헬퍼 — 어디서든 이걸로 저장
+        function saveItems() {
+            try { localStorage.setItem('neulpum_mart_items', JSON.stringify(customItems)); }
+            catch (e) { console.warn('품목 저장 실패 (저장 공간 부족):', e); }
         }
+
+        // 세션 결제 성공 횟수 (영수증 배지용)
+        let paymentCount = 0;
+
+        let customItems;
+        try { customItems = JSON.parse(localStorage.getItem('neulpum_mart_items')); }
+        catch (e) { customItems = null; }
+        // 4레벨 구조가 없으면 마이그레이션: 기존 Lv2 → 새 Lv4 보존
+        if (!customItems || !customItems[1] || !customItems[2] || !customItems[3] || !customItems[4]) {
+            const fresh = JSON.parse(JSON.stringify(defaultItems));
+            if (customItems) {
+                if (customItems[1]) fresh[1] = customItems[1]; // 기존 Lv1 유지
+                if (customItems[2]) fresh[4] = customItems[2]; // 기존 Lv2 → 새 Lv4
+            }
+            customItems = fresh;
+            saveItems();
+        }
+
+        // 예산 복원
+        try { budgetAmount = parseInt(localStorage.getItem('neulpum_budget')) || 0; }
+        catch (e) { budgetAmount = 0; }
 
         function init() { renderStore(); renderWallet(); updateUI(); }
 
@@ -521,32 +722,48 @@
             window.scrollTo(0, 0);
         }
 
+        // 화폐 전체 정보 맵
+        const moneyMeta = {
+            100:   { label: '100원',     class: 'money-100' },
+            500:   { label: '500원',     class: 'money-500' },
+            1000:  { label: '1,000원',   class: 'money-1000' },
+            5000:  { label: '5,000원',   class: 'money-5000' },
+            10000: { label: '10,000원',  class: 'money-10000' },
+            50000: { label: '50,000원',  class: 'money-50000' }
+        };
+
         function renderWallet() {
-            const source = document.getElementById('money-source'); source.innerHTML = '';
-            const notes = [
-                { val: 1000, label: '1,000원', class: 'money-1000' }, 
-                { val: 5000, label: '5,000원', class: 'money-5000' }, 
-                { val: 10000, label: '10,000원', class: 'money-10000' }, 
-                { val: 50000, label: '50,000원', class: 'money-50000' }
-            ];
-            const coins = [
-                { val: 500, label: '500원', class: 'money-500' }, 
-                { val: 100, label: '100원', class: 'money-100' }
-            ];
-            const displayList = currentLevel === 1 ? [notes[0]] : [...notes, ...coins];
+            const source = document.getElementById('money-source');
+            source.innerHTML = '';
+
+            // #5 레벨별 사용 가능 화폐
+            const denoms = levelDenominations[currentLevel];
+
+            // #6 예산 모드: 잔여 예산 이하 화폐만 표시
+            const walletRemaining = budgetAmount > 0 ? budgetAmount - paidAmount : Infinity;
+
+            const displayList = denoms
+                .filter(v => v <= walletRemaining)
+                .map(v => ({ val: v, ...moneyMeta[v] }));
+
             displayList.forEach(curr => {
-                const div = document.createElement('div'); div.className = `money-item ${curr.class}`;
-                div.draggable = true; div.title = curr.label;
-                div.ondragstart = (e) => { 
-                    playSound('click'); 
-                    e.dataTransfer.setData('text', curr.val); 
-                    e.dataTransfer.setData('class', curr.class); 
+                const div = document.createElement('div');
+                div.className = `money-item ${curr.class}`;
+                div.draggable = true;
+                div.title = curr.label;
+                div.dataset.val = curr.val; // #4 힌트 탐색용
+                div.ondragstart = (e) => {
+                    playSound('click');
+                    e.dataTransfer.setData('text', curr.val);
+                    e.dataTransfer.setData('class', curr.class);
                 };
                 div.ontouchstart = (e) => handleTouchStart(e, curr);
                 div.ontouchmove = handleTouchMove;
                 div.ontouchend = handleTouchEnd;
                 source.appendChild(div);
             });
+
+            updateBudgetDisplay();
         }
 
         let touchTarget = null; let touchClone = null;
@@ -601,6 +818,7 @@
         }
 
         const dropZone = document.getElementById('drop-zone');
+        const feedbackEl = document.getElementById('payment-feedback');
         dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
         dropZone.ondragleave = () => { dropZone.classList.remove('dragover'); };
         dropZone.ondrop = (e) => {
@@ -615,89 +833,144 @@
             paidAmount += val;
             const m = document.createElement('div'); m.className = `money-item ${cls}`;
             m.style.position = 'absolute'; m.style.width = '120px';
-            
-            // 돈이 상자 밖으로 너무 나가지 않도록 배치 보정
             const rect = dropZone.getBoundingClientRect();
             let safeX = Math.max(10, Math.min(x - 60, rect.width - 110));
             let safeY = Math.max(10, Math.min(y - 40, rect.height - 70));
-            
             m.style.left = safeX + 'px';
             m.style.top = safeY + 'px';
             m.style.transform = `scale(0.6) rotate(${Math.random()*40-20}deg)`;
-            dropZone.appendChild(m); updateUI();
-        }
+            dropZone.appendChild(m);
 
-        function addToCart(item) { 
-            const existingItem = cart.find(i => i.id === item.id);
-            if (existingItem) {
-                existingItem.quantity += 1;
+            // #4 스캐폴딩: 아직 부족하면 카운트 증가
+            if (paidAmount < totalAmount) {
+                insufficientAttempts++;
             } else {
-                cart.push({...item, quantity: 1});
+                insufficientAttempts = 0;
             }
-            totalAmount += item.price; 
-            updateUI(); 
-            renderStore();
+
+            // #6 예산 모드: 지갑 재렌더 (잔여 예산 변경)
+            if (budgetAmount > 0) renderWallet();
+
+            updateUI();
         }
 
-        function removeFromCart(itemId) { 
-            const idx = cart.findIndex(i => i.id === itemId); 
-            if (idx > -1) { 
-                totalAmount -= cart[idx].price; 
-                if (cart[idx].quantity > 1) {
-                    cart[idx].quantity -= 1;
-                } else {
-                    cart.splice(idx, 1); 
-                }
-                updateUI(); 
-                renderStore();
-            } 
+        function addToCart(item) {
+            const existingItem = cart.find(i => i.id === item.id);
+            if (existingItem) { existingItem.quantity += 1; }
+            else { cart.push({...item, quantity: 1}); }
+            totalAmount += item.price;
+            insufficientAttempts = 0; // 장바구니 변경 시 힌트 초기화
+            updateUI(); renderStore();
         }
 
-        function emptyCart() { if (cart.length === 0) return; playSound('click'); cart = []; totalAmount = 0; updateUI(); renderStore(); }
+        function removeFromCart(itemId) {
+            const idx = cart.findIndex(i => i.id === itemId);
+            if (idx > -1) {
+                totalAmount -= cart[idx].price;
+                if (cart[idx].quantity > 1) { cart[idx].quantity -= 1; }
+                else { cart.splice(idx, 1); }
+                insufficientAttempts = 0;
+                updateUI(); renderStore();
+            }
+        }
+
+        function emptyCart() {
+            if (cart.length === 0) return;
+            playSound('click'); cart = []; totalAmount = 0;
+            insufficientAttempts = 0;
+            updateUI(); renderStore();
+        }
 
         function updateUI() {
             const cartDiv = document.getElementById('cart-list');
-            cartDiv.innerHTML = cart.length === 0 ? '<div style="text-align:center; color:#888; margin-top:40px;">물건을 담아주세요</div>' : 
-                cart.map(i => `<div class="cart-item"><div><b>${i.name} x ${i.quantity}</b><br><small>${(i.price * i.quantity).toLocaleString()}원</small></div><button class="remove-btn" onclick="removeFromCart(${i.id})">X</button></div>`).join('');
+            cartDiv.innerHTML = cart.length === 0
+                ? '<div style="text-align:center; color:#888; margin-top:40px;">물건을 담아주세요</div>'
+                : cart.map(i => `<div class="cart-item"><div><b>${i.name} x ${i.quantity}</b><br><small>${(i.price * i.quantity).toLocaleString()}원</small></div><button class="remove-btn" onclick="removeFromCart(${i.id})">X</button></div>`).join('');
             document.getElementById('total-amount').innerText = totalAmount.toLocaleString();
             document.getElementById('paid-amount').innerText = paidAmount.toLocaleString();
             document.getElementById('pay-btn').classList.toggle('enabled', totalAmount > 0 && paidAmount >= totalAmount);
-            
+
+            // 결제 피드백 메시지 & 드롭존 색 업데이트
+            if (budgetAmount > 0 && totalAmount > budgetAmount) {
+                feedbackEl.className = 'payment-feedback need-more';
+                feedbackEl.innerHTML = `⚠️ 예산(${budgetAmount.toLocaleString()}원)을 초과했어요! 물건을 빼주세요.`;
+                dropZone.classList.remove('paid-ok');
+            } else if (totalAmount > 0 && paidAmount > 0 && paidAmount < totalAmount) {
+                const needed = (totalAmount - paidAmount).toLocaleString();
+                feedbackEl.className = 'payment-feedback need-more';
+                const hintMsg = insufficientAttempts >= 2
+                    ? ' <span style="font-size:0.9rem; color:#4a90e2;">👆 반짝이는 지폐를 써보세요!</span>'
+                    : '';
+                feedbackEl.innerHTML = `아직 <strong>${needed}원</strong>이 더 필요해요! 💰${hintMsg}`;
+                dropZone.classList.remove('paid-ok');
+            } else if (totalAmount > 0 && paidAmount >= totalAmount) {
+                feedbackEl.className = 'payment-feedback just-right';
+                feedbackEl.innerHTML = `좋아요! 아래 <strong>결제하기</strong> 버튼을 눌러요 ✅`;
+                dropZone.classList.add('paid-ok');
+            } else {
+                feedbackEl.className = 'payment-feedback';
+                feedbackEl.innerHTML = '';
+                dropZone.classList.remove('paid-ok');
+            }
+
+            // #4 스캐폴딩: 힌트 하이라이트 업데이트
+            updateWalletHints();
+
+            // 이동 버튼 텍스트
             const toPaymentBtn = document.getElementById('to-payment-btn');
             const totalCount = cart.reduce((a, b) => a + b.quantity, 0);
-            toPaymentBtn.innerText = totalCount > 0 ? `${totalCount}개 담음 - 계산하러 가기 ➡️` : "담기 완료! 계산하러 가기 ➡️";
+            toPaymentBtn.innerText = totalCount > 0
+                ? `${totalCount}개 담음 - 계산하러 가기 ➡️`
+                : '담기 완료! 계산하러 가기 ➡️';
         }
 
-        function resetMoney() { playSound('click'); paidAmount = 0; dropZone.innerHTML = ''; updateUI(); }
-        
-        function setLevel(l) { 
-            playSound('click'); 
-            currentLevel = l; 
-            document.querySelectorAll('.level-btn').forEach((b, i) => b.classList.toggle('active', i+1 === l)); 
-            cart = []; totalAmount = 0; resetMoney(); 
+        function resetMoney() {
+            playSound('click');
+            paidAmount = 0;
+            dropZone.innerHTML = '';
+            insufficientAttempts = 0;
+            if (budgetAmount > 0) renderWallet(); // 예산 모드: 지갑 복원
+            updateUI();
+        }
+
+        function setLevel(l) {
+            playSound('click');
+            currentLevel = l;
+            document.querySelectorAll('.level-btn').forEach((b, i) => b.classList.toggle('active', i + 1 === l));
+            cart = []; totalAmount = 0; insufficientAttempts = 0;
+            paidAmount = 0;
+            dropZone.innerHTML = '';
             document.body.className = 'shopping-view';
-            renderStore(); renderWallet(); updateUI(); 
+            renderStore(); renderWallet(); updateUI();
         }
 
-        function openHelp() { playSound('click'); document.getElementById('help-modal').style.display = 'flex'; }
+        function openHelp()  { playSound('click'); document.getElementById('help-modal').style.display = 'flex'; }
         function closeHelp() { playSound('click'); document.getElementById('help-modal').style.display = 'none'; }
         function openAdmin() { playSound('click'); renderAdminList(); document.getElementById('admin-modal').style.display = 'flex'; }
         function closeAdmin() { playSound('click'); document.getElementById('admin-modal').style.display = 'none'; renderStore(); }
 
         function renderAdminList() {
-            const list = document.getElementById('admin-item-list'); list.innerHTML = '';
-            [1, 2].forEach(lvl => customItems[lvl].forEach(item => {
-                const row = document.createElement('div'); row.className = 'admin-item-row';
-                row.style.display = 'flex'; row.style.justifyContent = 'space-between'; row.style.padding = '10px'; row.style.borderBottom = '1px solid #eee';
-                row.innerHTML = `<span>[Lv.${lvl}] ${item.name} (${item.price}원)</span><button class="delete-btn" onclick="deleteItem(${lvl}, ${item.id})" style="background:#ff4d4f; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">삭제</button>`;
-                list.appendChild(row);
-            }));
+            const list = document.getElementById('admin-item-list');
+            list.innerHTML = '';
+            [1, 2, 3, 4].forEach(lvl => {
+                if (!customItems[lvl] || customItems[lvl].length === 0) return;
+                const header = document.createElement('div');
+                header.style.cssText = 'padding:8px 10px; background:#f3e8ff; font-weight:bold; border-radius:8px; margin-top:10px; font-size:0.85rem;';
+                header.innerText = `Lv.${lvl} — ${levelLabels[lvl]}`;
+                list.appendChild(header);
+                customItems[lvl].forEach(item => {
+                    const row = document.createElement('div');
+                    row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-bottom:1px solid #eee;';
+                    row.innerHTML = `<span>${item.name} (${item.price.toLocaleString()}원)</span><button onclick="deleteItem(${lvl}, ${item.id})" style="background:#ff4d4f; color:white; border:none; padding:4px 10px; border-radius:5px; cursor:pointer; font-size:0.8rem;">삭제</button>`;
+                    list.appendChild(row);
+                });
+            });
         }
 
         function resetToDefaultItems() {
-            if (confirm("모든 품목을 기본 리스트(각 레벨별 10개)로 초기화하시겠습니까?")) {
+            if (confirm("모든 품목을 기본 리스트(레벨별 10개)로 초기화하시겠습니까?")) {
                 customItems = JSON.parse(JSON.stringify(defaultItems));
-                localStorage.setItem('neulpum_mart_items', JSON.stringify(customItems));
+                saveItems();
                 renderAdminList();
                 renderStore();
                 alert("초기화되었습니다.");
@@ -705,83 +978,248 @@
         }
 
         async function addNewItem() {
-            const name = document.getElementById('new-item-name').value; 
-            const price = parseInt(document.getElementById('new-item-price').value); 
-            const lvl = document.getElementById('new-item-level').value; 
-            const file = document.getElementById('new-item-image').files[0];
-            if (!name || !price) return alert("입력 확인");
-            let imgData = file ? await toBase64(file) : null;
+            const name  = document.getElementById('new-item-name').value.trim();
+            const price = parseInt(document.getElementById('new-item-price').value);
+            const lvl   = parseInt(document.getElementById('new-item-level').value);
+            const file  = document.getElementById('new-item-image').files[0];
+            if (!name)                return alert("물건 이름을 입력해주세요.");
+            if (!price || price <= 0) return alert("올바른 가격을 입력해주세요. (1원 이상)");
+            let imgData = null;
+            if (file) {
+                try { imgData = await toBase64(file); }
+                catch (e) { return alert("이미지 파일을 읽을 수 없습니다. 다른 파일을 선택해주세요."); }
+            }
             customItems[lvl].push({ id: Date.now(), name, price, img: imgData });
-            
             try {
-                localStorage.setItem('neulpum_mart_items', JSON.stringify(customItems));
-                playSound('success'); renderAdminList();
+                saveItems();
+                playSound('success');
+                renderAdminList();
+                document.getElementById('new-item-name').value  = '';
+                document.getElementById('new-item-price').value = '';
+                document.getElementById('new-item-image').value = '';
             } catch (e) {
                 alert("저장 공간이 부족합니다. 이미지 용량이 너무 클 수 있습니다.");
-                customItems[lvl].pop(); // 추가했던 데이터 롤백
+                customItems[lvl].pop();
             }
         }
-        function deleteItem(lvl, id) { 
-            customItems[lvl] = customItems[lvl].filter(i => i.id !== id); 
-            localStorage.setItem('neulpum_mart_items', JSON.stringify(customItems)); 
-            
-            // 장바구니 동기화 로직 추가 (삭제된 물건을 카트에서도 뺌)
+
+        function deleteItem(lvl, id) {
+            customItems[lvl] = customItems[lvl].filter(i => i.id !== id);
+            saveItems();
             const cartItem = cart.find(i => i.id === id);
             if (cartItem) {
                 totalAmount -= cartItem.price * cartItem.quantity;
                 cart = cart.filter(i => i.id !== id);
                 updateUI();
             }
-            
-            renderAdminList(); 
-        }
-        const toBase64 = file => new Promise((r, j) => { const rd = new FileReader(); rd.readAsDataURL(file); rd.onload = () => r(rd.result); });
-
-        function completePayment() {
-            if (paidAmount < totalAmount) return; playSound('success');
-            const change = paidAmount - totalAmount;
-            document.getElementById('receipt-content').innerHTML = cart.map(i => `<div style="display:flex; justify-content:space-between"><span>${i.name} x ${i.quantity}</span><span>${(i.price * i.quantity).toLocaleString()}원</span></div>`).join('') + `<hr style="border:1px dashed #000; margin:15px 0;"><div style="display:flex; justify-content:space-between; font-weight:bold;"><span>합계:</span><span>${totalAmount.toLocaleString()}원</span></div><div style="display:flex; justify-content:space-between;"><span>낸 돈:</span><span>${paidAmount.toLocaleString()}원</span></div>`;
-            document.getElementById('receipt-change').innerText = change.toLocaleString() + "원";
-            document.getElementById('modal').style.display = 'flex';
+            renderAdminList();
         }
 
-        function closeReceipt() { 
-            document.getElementById('modal').style.display = 'none'; 
-            emptyCart(); 
-            resetMoney(); 
+        const toBase64 = file => new Promise((res, rej) => {
+            const rd = new FileReader();
+            rd.readAsDataURL(file);
+            rd.onload  = () => res(rd.result);
+            rd.onerror = rej;
+        });
+
+        // ── #4 스캐폴딩 힌트 ─────────────────────────────────────────
+        function greedyBillsForLevel(amount) {
+            const denoms = [...levelDenominations[currentLevel]].sort((a, b) => b - a);
+            const result = [];
+            let rem = amount;
+            for (const d of denoms) { while (rem >= d) { result.push(d); rem -= d; } }
+            return result;
+        }
+
+        function updateWalletHints() {
+            const items = document.querySelectorAll('#money-source .money-item');
+            if (insufficientAttempts >= 2 && totalAmount > 0 && paidAmount < totalAmount) {
+                const needed = totalAmount - paidAmount;
+                const hints  = greedyBillsForLevel(needed);
+                items.forEach(el =>
+                    el.classList.toggle('hint-glow', hints.includes(parseInt(el.dataset.val)))
+                );
+            } else {
+                items.forEach(el => el.classList.remove('hint-glow'));
+            }
+        }
+
+        // ── #2 거스름돈 게임 ─────────────────────────────────────────
+        function greedyBills(amount) {
+            const all = [50000, 10000, 5000, 1000, 500, 100];
+            const result = [];
+            let rem = amount;
+            for (const d of all) { while (rem >= d) { result.push(d); rem -= d; } }
+            return result;
+        }
+
+        function openChangeGame(change) {
+            changeTarget = change;
+            const correct    = greedyBills(change);
+            const usedSet    = new Set(correct);
+            const distractors = [50000, 10000, 5000, 1000, 500, 100]
+                .filter(d => !usedSet.has(d) && d < change * 2)
+                .slice(0, 2);
+            const pool = [...correct, ...distractors].sort(() => Math.random() - 0.5);
+
+            const container = document.getElementById('change-game-bills');
+            container.innerHTML = '';
+            pool.forEach(val => {
+                const meta = moneyMeta[val];
+                if (!meta) return;
+                const isCoin = val < 1000;
+                const el = document.createElement('div');
+                el.className = `${isCoin ? 'change-coin' : 'change-bill'} ${meta.class}`;
+                el.dataset.val = val;
+                el.title = meta.label;
+                el.onclick = () => toggleChangeBill(el);
+                container.appendChild(el);
+            });
+
+            document.getElementById('change-game-target').innerText   = change.toLocaleString() + '원';
+            document.getElementById('change-game-total').innerText     = '0원';
+            document.getElementById('change-game-feedback').innerText  = '';
+            document.getElementById('change-game-modal').style.display = 'flex';
+        }
+
+        function toggleChangeBill(el) {
+            playSound('click');
+            el.classList.toggle('picked');
+            const total = Array.from(
+                document.querySelectorAll('#change-game-bills .picked')
+            ).reduce((s, e) => s + parseInt(e.dataset.val), 0);
+
+            document.getElementById('change-game-total').innerText = total.toLocaleString() + '원';
+
+            if (total === changeTarget) {
+                playSound('success');
+                document.getElementById('change-game-feedback').innerHTML =
+                    '<span style="color:#065f46; font-size:1.1rem;">🎉 맞았어요! 거스름돈을 정확히 받았어요!</span>';
+                setTimeout(() => {
+                    document.getElementById('change-game-modal').style.display = 'none';
+                    closeReceiptAndReset();
+                }, 1800);
+            } else if (total > changeTarget) {
+                document.getElementById('change-game-feedback').innerHTML =
+                    '<span style="color:#b91c1c;">너무 많아요! 다시 선택해보세요 💦</span>';
+                setTimeout(resetChangePile, 900);
+            } else {
+                document.getElementById('change-game-feedback').innerText = '';
+            }
+        }
+
+        function resetChangePile() {
+            document.querySelectorAll('#change-game-bills .picked')
+                .forEach(el => el.classList.remove('picked'));
+            document.getElementById('change-game-total').innerText    = '0원';
+            document.getElementById('change-game-feedback').innerText = '';
+        }
+
+        function skipChangeGame() {
+            document.getElementById('change-game-modal').style.display = 'none';
+            closeReceiptAndReset();
+        }
+
+        function closeReceiptAndReset() {
+            document.getElementById('modal').style.display = 'none';
+            emptyCart();
+            resetMoney();
             document.body.className = 'shopping-view';
             window.scrollTo(0, 0);
         }
 
-        // --- 제작자 문의 로직 (Supabase) ---
-        function openQA() {
-            playSound('click');
-            document.getElementById('qa-modal').style.display = 'flex';
+        // ── #6 예산 관리 ─────────────────────────────────────────────
+        function saveBudget() {
+            const val = parseInt(document.getElementById('budget-input').value);
+            budgetAmount = (isNaN(val) || val < 0) ? 0 : val;
+            try { localStorage.setItem('neulpum_budget', budgetAmount); } catch(e) {}
+            renderWallet();
+            alert(budgetAmount > 0
+                ? `예산이 ${budgetAmount.toLocaleString()}원으로 설정되었습니다.`
+                : '예산 제한이 해제되었습니다.');
         }
 
-        function closeQA() {
-            playSound('click');
-            document.getElementById('qa-modal').style.display = 'none';
+        function updateBudgetDisplay() {
+            const el = document.getElementById('budget-display');
+            if (!el) return;
+            if (budgetAmount > 0) {
+                const exceeded = totalAmount > budgetAmount;
+                el.className = 'budget-badge' + (exceeded ? ' exceeded' : '');
+                el.innerHTML  = exceeded
+                    ? `⚠️ 예산 초과! (예산: ${budgetAmount.toLocaleString()}원)`
+                    : `💰 오늘 예산: ${budgetAmount.toLocaleString()}원 · 남은 돈: <b>${(budgetAmount - paidAmount).toLocaleString()}원</b>`;
+                el.style.display = 'block';
+            } else {
+                el.style.display = 'none';
+            }
         }
+
+        function completePayment() {
+            if (paidAmount < totalAmount) return;
+            playSound('success');
+
+            // #3 세션 통계 업데이트
+            paymentCount++;
+            sessionStats.payments++;
+            const change = paidAmount - totalAmount;
+            sessionStats.totalExcess += change;
+            insufficientAttempts = 0;
+
+            // 영수증 내용
+            document.getElementById('receipt-content').innerHTML =
+                cart.map(i =>
+                    `<div style="display:flex; justify-content:space-between"><span>${i.name} x ${i.quantity}</span><span>${(i.price * i.quantity).toLocaleString()}원</span></div>`
+                ).join('') +
+                `<hr style="border:1px dashed #000; margin:15px 0;">` +
+                `<div style="display:flex; justify-content:space-between; font-weight:bold;"><span>합계:</span><span>${totalAmount.toLocaleString()}원</span></div>` +
+                `<div style="display:flex; justify-content:space-between;"><span>낸 돈:</span><span>${paidAmount.toLocaleString()}원</span></div>`;
+            document.getElementById('receipt-change').innerText = change.toLocaleString() + '원';
+
+            // 성공 배지
+            document.getElementById('receipt-badge').innerHTML =
+                `<div style="text-align:center; margin-top:15px; padding:12px; background:#fff9db; border-radius:12px; font-weight:bold; color:#7c5a00;">` +
+                `🎉 오늘 <span style="font-size:1.5rem; color:#e67700;">${paymentCount}</span>번째 쇼핑 성공!</div>`;
+
+            // #3 세션 통계 표시
+            const avgExcess = Math.round(sessionStats.totalExcess / sessionStats.payments);
+            const statsEl   = document.getElementById('receipt-stats');
+            statsEl.style.display = 'block';
+            statsEl.innerHTML = `📊 누적 성공: ${sessionStats.payments}번 · 평균 거스름돈: ${avgExcess.toLocaleString()}원`;
+
+            // #2 거스름돈 게임 버튼 연결
+            const closeBtn = document.getElementById('receipt-close-btn');
+            if (change > 0) {
+                closeBtn.innerText = '💰 거스름돈 받아보기';
+                closeBtn.onclick = () => {
+                    document.getElementById('modal').style.display = 'none';
+                    openChangeGame(change);
+                };
+            } else {
+                closeBtn.innerText = '감사합니다 (닫기)';
+                closeBtn.onclick = closeReceiptAndReset;
+            }
+
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        // ── 제작자 문의 (Supabase) ───────────────────────────────────
+        function openQA()  { playSound('click'); document.getElementById('qa-modal').style.display = 'flex'; }
+        function closeQA() { playSound('click'); document.getElementById('qa-modal').style.display = 'none'; }
 
         async function sendInquiry() {
             const name = document.getElementById('qa-name').value.trim();
             const text = document.getElementById('qa-text').value.trim();
-            const btn = document.getElementById('send-btn');
-
+            const btn  = document.getElementById('send-btn');
             if (!name || !text) return alert("이름과 내용을 모두 입력해주세요!");
 
-            btn.disabled = true;
-            btn.innerText = "전송 중...";
+            btn.disabled  = true;
+            btn.innerText = '전송 중...';
 
             try {
                 const { error } = await supabaseClient.from('mart_inquiries').insert([{
-                    sender: name,
-                    content: text
+                    sender: name, content: text
                 }]);
-
                 if (error) throw error;
-
                 playSound('success');
                 alert("제작자에게 문의가 안전하게 전달되었습니다! ❤️");
                 document.getElementById('qa-name').value = '';
@@ -790,8 +1228,8 @@
             } catch (err) {
                 alert("전송 실패: " + err.message);
             } finally {
-                btn.disabled = false;
-                btn.innerText = "메시지 보내기 🚀";
+                btn.disabled  = false;
+                btn.innerText = '메시지 보내기 🚀';
             }
         }
 
